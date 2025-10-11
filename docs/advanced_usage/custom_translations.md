@@ -9,12 +9,7 @@ pip install ydata-profiling
 ```
 
 ### 2. 导出翻译模板
-#### 方法A：使用命令行工具生成模板
-```python
-ydata-profiling-translate create-template -l en -o ./
-这会生成 en_template.json 文件
-```
-#### 方法B：使用Python代码生成模板
+#### 使用Python代码生成模板
 ```python
 from ydata_profiling.i18n import export_translation_template
  
