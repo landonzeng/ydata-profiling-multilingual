@@ -17,4 +17,7 @@ python -m twine upload --repository testpypi dist/*
 Remove-Item build, dist -Recurse -Force -ErrorAction SilentlyContinue
 python -m build
 python -m twine check dist/*
+
+# 上传至pypi和testpypip
+python -m twine upload dist/*
 python -m twine upload --repository testpypi dist/*

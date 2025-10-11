@@ -10,6 +10,7 @@ import pandas as pd
 from ydata_profiling.config import Settings
 from ydata_profiling.model.correlations import perform_check_correlation
 from ydata_profiling.utils.styles import get_alert_styles
+from ydata_profiling.i18n import _
 
 
 def fmt_percent(value: float, edge_cases: bool = True) -> str:
@@ -129,12 +130,12 @@ class Alert:
         # TODO: render in template
         style = self._styles.get(self.alert_type.name.lower(), "secondary")
         hint = ""
-
+        # _("rendering.other_values_count",other_count=other_count),
         if self.alert_type == AlertType.HIGH_CORRELATION and self.values is not None:
             num = len(self.values["fields"])
             title = ", ".join(self.values["fields"])
             corr = self.values["corr"]
-            hint = f'data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="This variable has a high {corr} correlation with {num} fields: {title}"'
+            hint = (f'data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{_("core.alerts.alerts_high_correlation_tip",corr=corr,num=num,title=title)}"')
 
         return (
             f'<span class="badge text-bg-{style}" {hint}>{self.alert_type_name}</span>'
@@ -744,7 +745,10 @@ def check_correlation_alerts(config: Settings, correlations: dict) -> List[Alert
             alerts.append(
                 HighCorrelationAlert(
                     column_name=col,
-                    values={"corr": "overall", "fields": fields},
+                    values={
+                        "corr": _("core.alerts.correlation_types.overall"),
+                        "fields": fields
+                    },
                 )
             )
     return alerts

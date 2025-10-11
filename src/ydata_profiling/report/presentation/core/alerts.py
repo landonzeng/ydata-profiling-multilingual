@@ -13,7 +13,7 @@ class Alerts(ItemRenderer):
         super().__init__("alerts", {"alerts": alerts, "style": style}, **kwargs)
 
     def __repr__(self):
-        return _("core.alerts")
+        return _("core.alerts.title")
 
     def render(self) -> Any:
         raise NotImplementedError()

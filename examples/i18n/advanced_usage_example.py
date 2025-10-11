@@ -4,7 +4,6 @@ Complete workflow example for custom translations in ydata-profiling
 """
 import pandas as pd
 import json
-import tempfile
 import shutil
 from pathlib import Path
 from ydata_profiling import ProfileReport
@@ -14,26 +13,53 @@ from ydata_profiling.i18n import (
     add_translation_directory,
     set_locale,
     get_available_locales,
-    get_locale
+    get_locale,
+    _
 )
-from ydata_profiling.i18n import _
+
+
+# 配置输出目录
+OUTPUT_DIR = Path("output")
+
+
+def setup_output_directory():
+    """创建输出目录"""
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    print(f"📁 Output directory: {OUTPUT_DIR.absolute()}")
+    return OUTPUT_DIR
 
 
 def create_sample_data():
     """创建示例数据"""
     print("📊 Creating sample dataset...")
 
-    data = {
-        'product_name': ['iPhone 14', 'Samsung Galaxy', 'Google Pixel', 'iPhone 14', 'OnePlus 10'],
-        'price': [999, 899, 799, 999, 649],
-        'category': ['Electronics', 'Electronics', 'Electronics', 'Electronics', 'Electronics'],
-        'rating': [4.5, 4.2, 4.0, 4.5, 3.8],
-        'in_stock': [True, True, False, True, True],
-        'release_date': ['2022-09-16', '2022-02-25', '2022-10-13', '2022-09-16', '2022-01-11']
-    }
+    df = pd.DataFrame({
+        'bt': [
+            '2025-10-10 10:05:00', '2025-10-10 10:10:00', '2025-10-10 10:15:00', '2025-10-10 10:20:00',
+            '2025-10-10 10:25:00', '2025-10-10 10:30:00', '2025-10-10 10:35:00', '2025-10-10 10:40:00',
+            '2025-10-10 10:45:00', '2025-10-10 10:50:00', '2025-10-10 10:55:00', '2025-10-10 11:00:00'
+        ],
+        '1AL-GG4': [
+            54033.6, 54033.6, 54033.6, 54033.6,
+            54034.2, 54034.2, 54034.2, 54034.2,
+            54034.8, 54034.8, 54035.4, 54035.4
+        ],
+        '1AL-YF': [
+            300265.2, 300266.4, 300267.6, 300268.8,
+            300270, 300271.2, 300272.4, 300273.6,
+            300274.8, 300276.6, 300277.8, 300279.1
+        ],
+        '9AL-ZM4': [
+            18101.43, 18101.43, 18101.43, 18101.43,
+            18101.95, 18101.95, 18101.95, 18101.95,
+            18101.95, 18101.95, 18101.95, 18101.95
+        ]
+    })
 
-    df = pd.DataFrame(data)
+    df['bt'] = pd.to_datetime(df['bt'])
+
     print(f"✅ Sample dataset created with {len(df)} rows and {len(df.columns)} columns")
+    print(f"📋 Columns: {', '.join(df.columns.tolist())}")
     return df
 
 
@@ -41,8 +67,8 @@ def step1_export_template():
     """步骤1: 导出翻译模板"""
     print("\n🔧 Step 1: Exporting translation template...")
 
-    # 导出英文模板作为翻译基础
-    template_file = "en_translation_template.json"
+    # 导出英文模板作为翻译基础到output目录
+    template_file = OUTPUT_DIR / "en_translation_template.json"
     export_translation_template('en', template_file)
 
     print(f"✅ Translation template exported to: {template_file}")
@@ -51,8 +77,16 @@ def step1_export_template():
     with open(template_file, 'r', encoding='utf-8') as f:
         template_data = json.load(f)
 
-    print("📋 Template preview (first few keys):")
-    print(json.dumps({k: v for k, v in list(template_data.items())[:2]}, indent=2))
+    print("📋 Template structure preview:")
+    for section in template_data.keys():
+        if isinstance(template_data[section], dict):
+            print(f"  📁 {section}: {len(template_data[section])} keys")
+            # 显示前几个子键
+            sub_keys = list(template_data[section].keys())[:3]
+            if sub_keys:
+                print(f"    └── {', '.join(sub_keys)}...")
+        else:
+            print(f"  📄 {section}: {template_data[section]}")
 
     return template_file
 
@@ -65,203 +99,117 @@ def step2_create_custom_translations(template_file):
     with open(template_file, 'r', encoding='utf-8') as f:
         template = json.load(f)
 
-    # 创建法语翻译
+    # 创建法语翻译（基于实际的翻译键结构）
     french_translation = {
         "report": {
-            "title": "Rapport de profilage YData",
             "overview": "Aperçu",
             "variables": "Variables",
             "interactions": "Interactions",
-            "correlations": "Corrélations",
             "missing_values": "Valeurs manquantes",
             "sample": "Échantillon",
             "duplicates": "Lignes dupliquées",
             "footer_text": "Rapport généré par <a href=\"https://ydata.ai/?utm_source=opensource&utm_medium=pandasprofiling&utm_campaign=report\">YData</a>.",
-            "most_frequently_occurring": "Les plus fréquemment observés",
+            "most_frequently_occurring": "Le plus fréquent",
             "columns": "Colonnes",
             "more_details": "Plus de détails"
-        },
-        "overview": {
-            "dataset_info": "Informations sur l'ensemble de données",
-            "variable_types": "Types de variables",
-            "dataset_statistics": "Statistiques de l'ensemble de données",
-            "number_of_variables": "Nombre de variables",
-            "number_of_observations": "Nombre d'observations",
-            "missing_cells": "Cellules manquantes",
-            "missing_cells_percentage": "Cellules manquantes (%)",
-            "duplicate_rows": "Lignes dupliquées",
-            "duplicate_rows_percentage": "Lignes dupliquées (%)",
-            "average_record_size": "Taille moyenne d'un enregistrement en mémoire"
-        },
-        "variables": {
-            "numeric": "Numérique",
-            "categorical": "Catégorique",
-            "boolean": "Booléen",
-            "date": "Date",
-            "text": "Texte",
-            "url": "URL",
-            "path": "Chemin",
-            "image": "Image",
-            "distinct": "Distinct",
-            "distinct_percentage": "Distinct (%)",
-            "missing": "Manquant",
-            "missing_percentage": "Manquant (%)",
-            "statistics": "Statistiques",
-            "quantile_statistics": "Statistiques de quantiles",
-            "common_values": "Valeurs courantes",
-            "histogram": "Histogramme",
-            "mode": "Mode",
-            "standard_deviation": "Écart-type",
-            "sum": "Somme",
-            "mad": "Déviation absolue médiane (DAM)",
-            "coefficient_of_variation": "Coefficient de variation (CV)",
-            "kurtosis": "Kurtosis",
-            "skewness": "Asymétrie",
-            "range": "Étendue",
-            "interquartile_range": "Écart interquartile (IQR)",
-            "length": "Longueur",
-            "sample": "Échantillon"
-        },
-        "correlations": {
-            "pearson": "Corrélation de Pearson (r)",
-            "spearman": "Corrélation de Spearman (ρ)",
-            "kendall": "Corrélation de Kendall (τ)",
-            "phi_k": "Phik (φk)",
-            "cramers": "V de Cramér (φc)",
-            "auto": "Automatique"
-        },
-        "interactions": {
-            "scatter_plot": "Nuage de points",
-            "variable": "Variable"
-        },
-        "missing_values": {
-            "matrix": "Matrice",
-            "bar_chart": "Graphique à barres",
-            "heatmap": "Carte thermique",
-            "dendrogram": "Dendrogramme"
-        },
-        "alerts": {
-            "high_correlation": "Corrélation élevée",
-            "high_cardinality": "Cardinalité élevée",
-            "constant": "Constante",
-            "zeros": "Zéros",
-            "missing": "Manquant",
-            "skewed": "Asymétrique",
-            "type_date": "Date",
-            "uniform": "Uniforme",
-            "unique": "Unique",
-            "constant_length": "Longueur constante",
-            "duplicates": "Duplicatas",
-            "empty": "Vide",
-            "imbalance": "Déséquilibre",
-            "near_duplicates": "Quasi-duplicatas",
-            "non_stationary": "Non stationnaire",
-            "seasonal": "Saisonnier",
-            "truncated": "Tronqué",
-            "unsupported": "Non supporté",
-            "dirty_category": "Catégorie non propre"
-        },
-        "formatting": {
-            "bytes": "{value} octets",
-            "kb": "{value} Ko",
-            "mb": "{value} Mo",
-            "gb": "{value} Go",
-            "percentage": "{value} %"
         },
         "rendering": {
             "generate_structure": "Générer la structure du rapport",
             "html_progress": "Rendu HTML",
             "json_progress": "Rendu JSON",
             "widgets_progress": "Rendu des widgets",
-            "other_values_count": "Autres valeurs ({other_count})",
-            "missing": "(Manquant)"
+            "other_values_count": "Autres valeurs ({other_count})"
         },
         "core": {
             "unknown": "inconnu",
-            "alerts": "Alertes",
+            "alerts": {
+                "title": "Alertes",
+                "alerts_high_correlation_tip": "Cette variable a une forte corrélation {corr} avec {num} champs : {title}",
+                "correlation_types": {
+                    "overall": "globale"
+                }
+            },
             "collapse": "Réduire",
             "container": "Conteneur",
-            "correlationTable": "Tableau de corrélation",
+            "correlationTable": "TableauDeCorrelation",
             "dropdown": "Menu déroulant",
-            "duplicate": "Duplicata",
-            "frequencyTable": "Tableau de fréquence",
-            "frequencyTableSmall": "Tableau de fréquence réduit",
+            "duplicate": "Dupliquer",
             "html": "HTML",
             "image": "Image",
             "sample": "Échantillon",
             "scores": "Scores",
             "table": "Tableau",
-            "toggle_button": "Bouton de bascule",
+            "toggle_button": "Bouton basculer",
             "variable": "Variable",
-            "variable_info": "Informations sur la variable",
+            "variable_info": "InfoVariable",
             "model": {
-                "bar_count": "Compte",
-                "bar_caption": "Une visualisation simple des valeurs nulles par colonne.",
+                "bar_count": "Nombre",
+                "bar_caption": "Une visualisation simple de la nullité par colonne.",
                 "matrix": "Matrice",
-                "matrix_caption": "La matrice de nullité est une représentation dense des données qui permet de repérer rapidement visuellement les modèles de complétude des données.",
-                "heatmap": "Carte thermique",
-                "heatmap_caption": "La carte thermique de corrélation mesure la corrélation de nullité : à quel point la présence ou l'absence d'une variable affecte la présence d'une autre.",
+                "matrix_caption": "La matrice de nullité est un affichage dense de données qui vous permet de repérer rapidement visuellement les modèles dans la complétude des données.",
+                "heatmap": "Carte de chaleur",
+                "heatmap_caption": "La carte de chaleur de corrélation mesure la corrélation de nullité : à quel point la présence ou l'absence d'une variable affecte la présence d'une autre.",
                 "first_rows": "Premières lignes",
                 "last_rows": "Dernières lignes",
                 "random_sample": "Échantillon aléatoire"
             },
             "structure": {
                 "correlations": "Corrélations",
-                "heatmap": "Carte thermique",
+                "heatmap": "Carte de chaleur",
                 "table": "Tableau",
                 "overview": {
                     "values": "valeurs",
                     "number_variables": "Nombre de variables",
                     "number_observations": "Nombre d'observations",
+                    "number_of_series": "Nombre de séries",
                     "missing_cells": "Cellules manquantes",
                     "missing_cells_percentage": "Cellules manquantes (%)",
                     "duplicate_rows": "Lignes dupliquées",
                     "duplicate_rows_percentage": "Lignes dupliquées (%)",
                     "total_size_memory": "Taille totale en mémoire",
-                    "average_record_memory": "Taille moyenne d'un enregistrement en mémoire",
-                    "dataset_statistics": "Statistiques de l'ensemble de données",
+                    "average_record_memory": "Taille moyenne d'enregistrement en mémoire",
+                    "dataset_statistics": "Statistiques du jeu de données",
                     "variable_types": "Types de variables",
+                    "variable_descriptions": "Descriptions des variables",
                     "overview": "Aperçu",
                     "url": "URL",
                     "copyright": "Droits d'auteur",
-                    "dataset": "Ensemble de données",
+                    "dataset": "Jeu de données",
                     "analysis_started": "Analyse commencée",
                     "analysis_finished": "Analyse terminée",
                     "duration": "Durée",
                     "software_version": "Version du logiciel",
                     "download_configuration": "Télécharger la configuration",
                     "reproduction": "Reproduction",
-                    "variable_descriptions": "Descriptions des variables",
                     "variables": "Variables",
                     "alerts_count": "Alertes ({count})",
-                    "number_of_series": "Nombre de séries",
-                    "timeseries_length": "Longueur de la série temporelle",
+                    "timeseries_length": "Longueur des séries temporelles",
                     "starting_point": "Point de départ",
                     "ending_point": "Point de fin",
                     "period": "Période",
                     "timeseries_statistics": "Statistiques des séries temporelles",
                     "original": "Original",
-                    "scaled": "Échelonné",
+                    "scaled": "Mis à l'échelle",
                     "time_series": "Séries temporelles",
                     "interactions": "Interactions",
                     "distinct": "Distinct",
                     "distinct_percentage": "Distinct (%)",
                     "missing": "Manquant",
                     "missing_percentage": "Manquant (%)",
-                    "memory_size": "Taille en mémoire",
+                    "memory_size": "Taille mémoire",
                     "file": "Fichier",
                     "size": "Taille",
                     "file_size": "Taille du fichier",
-                    "file_size_caption": "Histogramme avec des intervalles fixes de tailles de fichiers (en octets)",
+                    "file_size_caption": "Histogramme avec des bacs de taille fixe des tailles de fichiers (en octets)",
                     "unique": "Unique",
-                    "unique_help": "Le nombre de valeurs uniques (toutes les valeurs qui n'apparaissent qu'une seule fois dans l'ensemble de données).",
+                    "unique_help": "Le nombre de valeurs uniques (toutes les valeurs qui apparaissent exactement une fois dans le jeu de données).",
                     "unique_percentage": "Unique (%)",
-                    "max_length": "Longueur maximale",
+                    "max_length": "Longueur max",
                     "median_length": "Longueur médiane",
                     "mean_length": "Longueur moyenne",
-                    "min_length": "Longueur minimale",
+                    "min_length": "Longueur min",
                     "length": "Longueur",
-                    "length_histogram": "Histogramme de longueur",
+                    "length_histogram": "histogramme de longueur",
                     "histogram_lengths_category": "Histogramme des longueurs de la catégorie",
                     "most_occurring_categories": "Catégories les plus fréquentes",
                     "most_frequent_character_per_category": "Caractère le plus fréquent par catégorie",
@@ -269,7 +217,7 @@ def step2_create_custom_translations(template_file):
                     "most_frequent_character_per_script": "Caractère le plus fréquent par script",
                     "most_occurring_blocks": "Blocs les plus fréquents",
                     "most_frequent_character_per_block": "Caractère le plus fréquent par bloc",
-                    "total_characters": "Nombre total de caractères",
+                    "total_characters": "Total des caractères",
                     "distinct_characters": "Caractères distincts",
                     "distinct_categories": "Catégories distinctes",
                     "unicode_categories": "Catégories Unicode (cliquez pour plus d'informations)",
@@ -278,23 +226,23 @@ def step2_create_custom_translations(template_file):
                     "distinct_blocks": "Blocs distincts",
                     "unicode_blocks": "Blocs Unicode (cliquez pour plus d'informations)",
                     "characters_unicode": "Caractères et Unicode",
-                    "characters_unicode_caption": "La norme Unicode attribue des propriétés à chaque point de code, qui peuvent être utilisées pour analyser des variables textuelles.",
+                    "characters_unicode_caption": "Le standard Unicode attribue des propriétés de caractère à chaque point de code, qui peuvent être utilisées pour analyser les variables textuelles.",
                     "most_occurring_characters": "Caractères les plus fréquents",
                     "characters": "Caractères",
                     "categories": "Catégories",
                     "scripts": "Scripts",
                     "blocks": "Blocs",
                     "unicode": "Unicode",
-                    "common_values": "Valeurs courantes",
-                    "common_values_table": "Valeurs courantes (Tableau)",
+                    "common_values": "Valeurs communes",
+                    "common_values_table": "Valeurs communes (Tableau)",
                     "1st_row": "1ère ligne",
                     "2nd_row": "2ème ligne",
                     "3rd_row": "3ème ligne",
                     "4th_row": "4ème ligne",
                     "5th_row": "5ème ligne",
-                    "categories_passes_threshold": "Nombre de catégories de variables dépassant le seuil (<code>config.plot.cat_freq.max_unique</code>)",
-                    "common_values_plot": "Valeurs courantes (Graphique)",
-                    "common_words": "Mots courants",
+                    "categories_passes_threshold ": "Le nombre de catégories de variables dépasse le seuil (<code>config.plot.cat_freq.max_unique</code>)",
+                    "common_values_plot": "Valeurs communes (Graphique)",
+                    "common_words": "Mots communs",
                     "wordcloud": "Nuage de mots",
                     "words": "Mots",
                     "mean": "Moyenne",
@@ -302,12 +250,12 @@ def step2_create_custom_translations(template_file):
                     "max": "Maximum",
                     "zeros": "Zéros",
                     "zeros_percentage": "Zéros (%)",
-                    "scatter": "Nuage",
+                    "scatter": "Nuage de points",
                     "scatterplot": "Nuage de points",
                     "scatterplot_caption": "Nuage de points dans le plan complexe",
-                    "mini_histogram": "Mini-histogramme",
+                    "mini_histogram": "Mini histogramme",
                     "histogram": "Histogramme",
-                    "histogram_caption": "Histogramme avec des intervalles fixes",
+                    "histogram_caption": "Histogramme avec des bacs de taille fixe",
                     "extreme_values": "Valeurs extrêmes",
                     "histogram_s": "Histogramme(s)",
                     "invalid_dates": "Dates invalides",
@@ -315,29 +263,29 @@ def step2_create_custom_translations(template_file):
                     "created": "Créé",
                     "accessed": "Accédé",
                     "modified": "Modifié",
-                    "min_width": "Largeur minimale",
+                    "min_width": "Largeur min",
                     "median_width": "Largeur médiane",
-                    "max_width": "Largeur maximale",
-                    "min_height": "Hauteur minimale",
+                    "max_width": "Largeur max",
+                    "min_height": "Hauteur min",
                     "median_height": "Hauteur médiane",
-                    "max_height": "Hauteur maximale",
-                    "min_area": "Surface minimale",
-                    "median_area": "Surface médiane",
-                    "max_area": "Surface maximale",
-                    "scatter_plot_image_sizes": "Nuage de points des tailles d'image",
+                    "max_height": "Hauteur max",
+                    "min_area": "Aire min",
+                    "median_area": "Aire médiane",
+                    "max_area": "Aire max",
+                    "scatter_plot_image_sizes": "Nuage de points des tailles d'images",
                     "scatter_plot": "Nuage de points",
                     "dimensions": "Dimensions",
-                    "exif_keys": "Clés EXIF",
-                    "exif_data": "Données EXIF",
+                    "exif_keys": "Clés Exif",
+                    "exif_data": "Données Exif",
                     "image": "Image",
                     "common_prefix": "Préfixe commun",
-                    "unique_stems": "Racines uniques",
+                    "unique_stems": "Radicaux uniques",
                     "unique_names": "Noms uniques",
                     "unique_extensions": "Extensions uniques",
                     "unique_directories": "Répertoires uniques",
                     "unique_anchors": "Ancres uniques",
                     "full": "Complet",
-                    "stem": "Racine",
+                    "stem": "Radical",
                     "name": "Nom",
                     "extension": "Extension",
                     "parent": "Parent",
@@ -347,18 +295,18 @@ def step2_create_custom_translations(template_file):
                     "infinite_percentage": "Infini (%)",
                     "Negative": "Négatif",
                     "Negative_percentage": "Négatif (%)",
-                    "5_th_percentile": "5e centile",
+                    "5_th_percentile": "5ème percentile",
                     "q1": "Q1",
-                    "median": "Médiane",
+                    "median": "médiane",
                     "q3": "Q3",
-                    "95_th_percentile": "95e centile",
+                    "95_th_percentile": "95ème percentile",
                     "range": "Étendue",
                     "iqr": "Écart interquartile (IQR)",
                     "quantile_statistics": "Statistiques de quantiles",
-                    "standard_deviation": "Écart-type",
+                    "standard_deviation": "Écart type",
                     "cv": "Coefficient de variation (CV)",
                     "kurtosis": "Kurtosis",
-                    "mad": "Déviation absolue médiane (DAM)",
+                    "mad": "Déviation absolue médiane (MAD)",
                     "skewness": "Asymétrie",
                     "sum": "Somme",
                     "variance": "Variance",
@@ -368,28 +316,34 @@ def step2_create_custom_translations(template_file):
                     "augmented_dickey_fuller_test_value": "Valeur p du test de Dickey-Fuller augmenté",
                     "autocorrelation": "Autocorrélation",
                     "autocorrelation_caption": "ACF et PACF",
-                    "timeseries": "Série temporelle",
-                    "timeseries_plot": "Graphique de série temporelle",
+                    "timeseries": "Séries temporelles",
+                    "timeseries_plot": "Graphique de séries temporelles",
                     "scheme": "Schéma",
-                    "netloc": "Emplacement réseau",
+                    "netloc": "Netloc",
                     "query": "Requête",
                     "fragment": "Fragment",
-                    "heatmap": "Carte thermique"
+                    "heatmap": "Carte de chaleur",
+                    "pearson's r": "Pearson's r",
+                    "spearman's ρ": "Spearman's ρ",
+                    "kendall's τ": "Kendall's τ",
+                    "phik (φk)": "Phik (φk)",
+                    "cramér's V (φc)": "Cramér's V (φc)",
+                    "auto": "Auto"
                 }
             }
         },
         "html": {
             "alerts": {
                 "title": "Alertes",
-                "not_present": "Aucune alerte présente dans cet ensemble de données",
+                "not_present": "Alerte non présente dans ce jeu de données",
                 "has_constant_value": "a une valeur constante",
                 "has_constant_length": "a une longueur constante",
-                "has_dirty_categories": "a des catégories non propres",
-                "has_high_cardinality": "a une cardinalité élevée",
+                "has_dirty_categories": "a des catégories sales",
+                "has_high_cardinality": "a une haute cardinalité",
                 "distinct_values": "valeurs distinctes",
-                "dataset_has": "L'ensemble de données a",
+                "dataset_has": "Le jeu de données a",
                 "duplicate_rows": "lignes dupliquées",
-                "dataset_is_empty": "L'ensemble de données est vide",
+                "dataset_is_empty": "Le jeu de données est vide",
                 "is_highly": "est fortement",
                 "correlated_with": "corrélé avec",
                 "and": "et",
@@ -398,32 +352,32 @@ def step2_create_custom_translations(template_file):
                 "has": "a",
                 "infinite_values": "valeurs infinies",
                 "missing_values": "valeurs manquantes",
-                "near_duplicate_rows": "lignes quasi-dupliquées",
+                "near_duplicate_rows": "lignes presque dupliquées",
                 "non_stationary": "est non stationnaire",
                 "seasonal": "est saisonnier",
                 "highly_skewed": "est fortement asymétrique",
                 "truncated_files": "fichiers tronqués",
-                "alert_type_date": "contient uniquement des valeurs datetime, mais est catégorique. Envisagez d'appliquer",
+                "alert_type_date": "contient uniquement des valeurs datetime, mais est catégorique. Considérez appliquer",
                 "uniformly_distributed": "est uniformément distribué",
                 "unique_values": "a des valeurs uniques",
-                "alert_unsupported": "est un type non supporté, vérifiez s'il nécessite un nettoyage ou une analyse supplémentaire",
+                "alert_unsupported": "est un type non supporté, vérifiez s'il nécessite un nettoyage ou une analyse plus poussée",
                 "zeros": "zéros"
             },
             "sequence": {
                 "overview_tabs": {
-                    "brought_to_you_by": "Présenté par <a href=\"https://ydata.ai/?utm_source=opensource&utm_medium=ydataprofiling&utm_campaign=report\">YData</a>"
+                    "brought_to_you_by": "Créé par <a href=\"https://ydata.ai/?utm_source=opensource&utm_medium=ydataprofiling&utm_campaign=report\">YData</a>"
                 }
             },
             "dropdown": "Sélectionner les colonnes",
             "frequency_table": {
                 "value": "Valeur",
-                "count": "Compte",
+                "count": "Nombre",
                 "frequency_percentage": "Fréquence (%)",
                 "redacted_value": "Valeur masquée",
                 "no_values_found": "Aucune valeur trouvée"
             },
             "scores": {
-                "overall_data_quality": "Score global de la qualité des données"
+                "overall_data_quality": "Score global de qualité des données"
             },
             "variable_info": {
                 "no_alerts": "Aucune alerte"
@@ -434,139 +388,53 @@ def step2_create_custom_translations(template_file):
     # 创建西班牙语翻译
     spanish_translation = {
         "report": {
-            "title": "Informe de Perfilado de YData",
             "overview": "Resumen",
             "variables": "Variables",
             "interactions": "Interacciones",
-            "correlations": "Correlaciones",
             "missing_values": "Valores faltantes",
             "sample": "Muestra",
             "duplicates": "Filas duplicadas",
             "footer_text": "Informe generado por <a href=\"https://ydata.ai/?utm_source=opensource&utm_medium=pandasprofiling&utm_campaign=report\">YData</a>.",
-            "most_frequently_occurring": "Los más frecuentes",
+            "most_frequently_occurring": "Más frecuente",
             "columns": "Columnas",
             "more_details": "Más detalles"
-          },
-        "overview": {
-            "dataset_info": "Información del conjunto de datos",
-            "variable_types": "Tipos de variables",
-            "dataset_statistics": "Estadísticas del conjunto de datos",
-            "number_of_variables": "Número de variables",
-            "number_of_observations": "Número de observaciones",
-            "missing_cells": "Celdas faltantes",
-            "missing_cells_percentage": "Celdas faltantes (%)",
-            "duplicate_rows": "Filas duplicadas",
-            "duplicate_rows_percentage": "Filas duplicadas (%)",
-            "average_record_size": "Tamaño promedio de registro en memoria"
-          },
-        "variables": {
-            "numeric": "Numérico",
-            "categorical": "Categórico",
-            "boolean": "Booleano",
-            "date": "Fecha",
-            "text": "Texto",
-            "url": "URL",
-            "path": "Ruta",
-            "image": "Imagen",
-            "distinct": "Distinto",
-            "distinct_percentage": "Distinto (%)",
-            "missing": "Faltante",
-            "missing_percentage": "Faltante (%)",
-            "statistics": "Estadísticas",
-            "quantile_statistics": "Estadísticas de cuantiles",
-            "common_values": "Valores comunes",
-            "histogram": "Histograma",
-            "mode": "Moda",
-            "standard_deviation": "Desviación estándar",
-            "sum": "Suma",
-            "mad": "Desviación absoluta mediana (DAM)",
-            "coefficient_of_variation": "Coeficiente de variación (CV)",
-            "kurtosis": "Curtosis",
-            "skewness": "Asimetría",
-            "range": "Rango",
-            "interquartile_range": "Rango intercuartílico (IQR)",
-            "length": "Longitud",
-            "sample": "Muestra"
-          },
-        "correlations": {
-            "pearson": "Correlación de Pearson (r)",
-            "spearman": "Correlación de Spearman (ρ)",
-            "kendall": "Correlación de Kendall (τ)",
-            "phi_k": "Phik (φk)",
-            "cramers": "V de Cramér (φc)",
-            "auto": "Automático"
-          },
-        "interactions": {
-            "scatter_plot": "Gráfico de dispersión",
-            "variable": "Variable"
-          },
-        "missing_values": {
-            "matrix": "Matriz",
-            "bar_chart": "Gráfico de barras",
-            "heatmap": "Mapa de calor",
-            "dendrogram": "Dendrograma"
-          },
-        "alerts": {
-            "high_correlation": "Correlación alta",
-            "high_cardinality": "Alta cardinalidad",
-            "constant": "Constante",
-            "zeros": "Ceros",
-            "missing": "Faltante",
-            "skewed": "Asimétrico",
-            "type_date": "Fecha",
-            "uniform": "Uniforme",
-            "unique": "Único",
-            "constant_length": "Longitud constante",
-            "duplicates": "Duplicados",
-            "empty": "Vacío",
-            "imbalance": "Desequilibrio",
-            "near_duplicates": "Casi duplicados",
-            "non_stationary": "No estacionario",
-            "seasonal": "Estacional",
-            "truncated": "Truncado",
-            "unsupported": "No soportado",
-            "dirty_category": "Categoría sucia"
-          },
-        "formatting": {
-            "bytes": "{value} bytes",
-            "kb": "{value} KB",
-            "mb": "{value} MB",
-            "gb": "{value} GB",
-            "percentage": "{value}%"
-          },
+        },
         "rendering": {
             "generate_structure": "Generar estructura del informe",
             "html_progress": "Renderizar HTML",
             "json_progress": "Renderizar JSON",
             "widgets_progress": "Renderizar widgets",
-            "other_values_count": "Otros valores ({other_count})",
-            "missing": "(Faltante)"
-          },
+            "other_values_count": "Otros valores ({other_count})"
+        },
         "core": {
             "unknown": "desconocido",
-            "alerts": "Alertas",
+            "alerts": {
+                "title": "Alertas",
+                "alerts_high_correlation_tip": "Esta variable tiene una alta correlación {corr} con {num} campos: {title}",
+                "correlation_types": {
+                    "overall": "general"
+                }
+            },
             "collapse": "Colapsar",
             "container": "Contenedor",
-            "correlationTable": "Tabla de correlación",
-            "dropdown": "Menú desplegable",
-            "duplicate": "Duplicado",
-            "frequencyTable": "Tabla de frecuencia",
-            "frequencyTableSmall": "Tabla de frecuencia pequeña",
+            "correlationTable": "TablaDeCorrelacion",
+            "dropdown": "Desplegable",
+            "duplicate": "Duplicar",
             "html": "HTML",
             "image": "Imagen",
             "sample": "Muestra",
             "scores": "Puntuaciones",
             "table": "Tabla",
-            "toggle_button": "Botón de alternancia",
+            "toggle_button": "Botón alternar",
             "variable": "Variable",
-            "variable_info": "Información de la variable",
+            "variable_info": "InfoVariable",
             "model": {
-                "bar_count": "Conteo",
-                "bar_caption": "Una visualización simple de la nulidad por columna.",
+                "bar_count": "Recuento",
+                "bar_caption": "Una visualización simple de nulidad por columna.",
                 "matrix": "Matriz",
-                "matrix_caption": "La matriz de nulidad es una representación densa de datos que permite identificar rápidamente patrones visuales en la completitud de los datos.",
+                "matrix_caption": "La matriz de nulidad es una visualización densa de datos que le permite identificar rápidamente patrones visuales en la completitud de los datos.",
                 "heatmap": "Mapa de calor",
-                "heatmap_caption": "El mapa de calor de correlación mide la correlación de nulidad: cómo la presencia o ausencia de una variable afecta la presencia de otra.",
+                "heatmap_caption": "El mapa de calor de correlación mide la correlación de nulidad: qué tan fuertemente la presencia o ausencia de una variable afecta la presencia de otra.",
                 "first_rows": "Primeras filas",
                 "last_rows": "Últimas filas",
                 "random_sample": "Muestra aleatoria"
@@ -579,6 +447,7 @@ def step2_create_custom_translations(template_file):
                     "values": "valores",
                     "number_variables": "Número de variables",
                     "number_observations": "Número de observaciones",
+                    "number_of_series": "Número de series",
                     "missing_cells": "Celdas faltantes",
                     "missing_cells_percentage": "Celdas faltantes (%)",
                     "duplicate_rows": "Filas duplicadas",
@@ -587,6 +456,7 @@ def step2_create_custom_translations(template_file):
                     "average_record_memory": "Tamaño promedio de registro en memoria",
                     "dataset_statistics": "Estadísticas del conjunto de datos",
                     "variable_types": "Tipos de variables",
+                    "variable_descriptions": "Descripciones de variables",
                     "overview": "Resumen",
                     "url": "URL",
                     "copyright": "Derechos de autor",
@@ -597,11 +467,9 @@ def step2_create_custom_translations(template_file):
                     "software_version": "Versión del software",
                     "download_configuration": "Descargar configuración",
                     "reproduction": "Reproducción",
-                    "variable_descriptions": "Descripciones de variables",
                     "variables": "Variables",
                     "alerts_count": "Alertas ({count})",
-                    "number_of_series": "Número de series",
-                    "timeseries_length": "Longitud de la serie temporal",
+                    "timeseries_length": "Longitud de series temporales",
                     "starting_point": "Punto de inicio",
                     "ending_point": "Punto final",
                     "period": "Período",
@@ -614,20 +482,20 @@ def step2_create_custom_translations(template_file):
                     "distinct_percentage": "Distinto (%)",
                     "missing": "Faltante",
                     "missing_percentage": "Faltante (%)",
-                    "memory_size": "Tamaño en memoria",
+                    "memory_size": "Tamaño de memoria",
                     "file": "Archivo",
                     "size": "Tamaño",
                     "file_size": "Tamaño del archivo",
-                    "file_size_caption": "Histograma con intervalos fijos de tamaños de archivo (en bytes)",
+                    "file_size_caption": "Histograma con bins de tamaño fijo de tamaños de archivos (en bytes)",
                     "unique": "Único",
-                    "unique_help": "El número de valores únicos (todos los valores que aparecen exactamente una vez en el conjunto de datos).",
+                    "unique_help": "El número de valores únicos (todos los valores que ocurren exactamente una vez en el conjunto de datos).",
                     "unique_percentage": "Único (%)",
-                    "max_length": "Longitud máxima",
+                    "max_length": "Longitud máx",
                     "median_length": "Longitud mediana",
-                    "mean_length": "Longitud media",
-                    "min_length": "Longitud mínima",
+                    "mean_length": "Longitud promedio",
+                    "min_length": "Longitud mín",
                     "length": "Longitud",
-                    "length_histogram": "Histograma de longitud",
+                    "length_histogram": "histograma de longitud",
                     "histogram_lengths_category": "Histograma de longitudes de la categoría",
                     "most_occurring_categories": "Categorías más frecuentes",
                     "most_frequent_character_per_category": "Carácter más frecuente por categoría",
@@ -644,7 +512,7 @@ def step2_create_custom_translations(template_file):
                     "distinct_blocks": "Bloques distintos",
                     "unicode_blocks": "Bloques Unicode (haga clic para más información)",
                     "characters_unicode": "Caracteres y Unicode",
-                    "characters_unicode_caption": "El estándar Unicode asigna propiedades a cada punto de código, que pueden usarse para analizar variables textuales.",
+                    "characters_unicode_caption": "El estándar Unicode asigna propiedades de caracteres a cada punto de código, que pueden usarse para analizar variables textuales.",
                     "most_occurring_characters": "Caracteres más frecuentes",
                     "characters": "Caracteres",
                     "categories": "Categorías",
@@ -658,7 +526,7 @@ def step2_create_custom_translations(template_file):
                     "3rd_row": "3ª fila",
                     "4th_row": "4ª fila",
                     "5th_row": "5ª fila",
-                    "categories_passes_threshold": "Número de categorías de variables que superan el umbral (<code>config.plot.cat_freq.max_unique</code>)",
+                    "categories_passes_threshold ": "El número de categorías de variables supera el umbral (<code>config.plot.cat_freq.max_unique</code>)",
                     "common_values_plot": "Valores comunes (Gráfico)",
                     "common_words": "Palabras comunes",
                     "wordcloud": "Nube de palabras",
@@ -671,9 +539,9 @@ def step2_create_custom_translations(template_file):
                     "scatter": "Dispersión",
                     "scatterplot": "Gráfico de dispersión",
                     "scatterplot_caption": "Gráfico de dispersión en el plano complejo",
-                    "mini_histogram": "Mini-histograma",
+                    "mini_histogram": "Mini histograma",
                     "histogram": "Histograma",
-                    "histogram_caption": "Histograma con intervalos fijos",
+                    "histogram_caption": "Histograma con bins de tamaño fijo",
                     "extreme_values": "Valores extremos",
                     "histogram_s": "Histograma(s)",
                     "invalid_dates": "Fechas inválidas",
@@ -681,20 +549,20 @@ def step2_create_custom_translations(template_file):
                     "created": "Creado",
                     "accessed": "Accedido",
                     "modified": "Modificado",
-                    "min_width": "Ancho mínimo",
+                    "min_width": "Ancho mín",
                     "median_width": "Ancho mediano",
-                    "max_width": "Ancho máximo",
-                    "min_height": "Altura mínima",
-                    "median_height": "Altura mediana",
-                    "max_height": "Altura máxima",
-                    "min_area": "Área mínima",
+                    "max_width": "Ancho máx",
+                    "min_height": "Alto mín",
+                    "median_height": "Alto mediano",
+                    "max_height": "Alto máx",
+                    "min_area": "Área mín",
                     "median_area": "Área mediana",
-                    "max_area": "Área máxima",
-                    "scatter_plot_image_sizes": "Gráfico de dispersión de tamaños de imagen",
+                    "max_area": "Área máx",
+                    "scatter_plot_image_sizes": "Gráfico de dispersión de tamaños de imágenes",
                     "scatter_plot": "Gráfico de dispersión",
                     "dimensions": "Dimensiones",
-                    "exif_keys": "Claves EXIF",
-                    "exif_data": "Datos EXIF",
+                    "exif_keys": "Claves Exif",
+                    "exif_data": "Datos Exif",
                     "image": "Imagen",
                     "common_prefix": "Prefijo común",
                     "unique_stems": "Raíces únicas",
@@ -715,7 +583,7 @@ def step2_create_custom_translations(template_file):
                     "Negative_percentage": "Negativo (%)",
                     "5_th_percentile": "Percentil 5",
                     "q1": "Q1",
-                    "median": "Mediana",
+                    "median": "mediana",
                     "q3": "Q3",
                     "95_th_percentile": "Percentil 95",
                     "range": "Rango",
@@ -724,34 +592,40 @@ def step2_create_custom_translations(template_file):
                     "standard_deviation": "Desviación estándar",
                     "cv": "Coeficiente de variación (CV)",
                     "kurtosis": "Curtosis",
-                    "mad": "Desviación absoluta mediana (DAM)",
+                    "mad": "Desviación absoluta mediana (MAD)",
                     "skewness": "Asimetría",
                     "sum": "Suma",
                     "variance": "Varianza",
-                    "monotonicity": "Monotonía",
+                    "monotonicity": "Monotonicidad",
                     "descriptive_statistics": "Estadísticas descriptivas",
                     "statistics": "Estadísticas",
-                    "augmented_dickey_fuller_test_value": "Valor p del test de Dickey-Fuller aumentado",
+                    "augmented_dickey_fuller_test_value": "Valor p de la prueba Dickey-Fuller aumentada",
                     "autocorrelation": "Autocorrelación",
                     "autocorrelation_caption": "ACF y PACF",
-                    "timeseries": "Serie temporal",
-                    "timeseries_plot": "Gráfico de serie temporal",
+                    "timeseries": "Series temporales",
+                    "timeseries_plot": "Gráfico de series temporales",
                     "scheme": "Esquema",
-                    "netloc": "Ubicación de red",
+                    "netloc": "Netloc",
                     "query": "Consulta",
                     "fragment": "Fragmento",
-                    "heatmap": "Mapa de calor"
+                    "heatmap": "Mapa de calor",
+                    "pearson's r": "Pearson's r",
+                    "spearman's ρ": "Spearman's ρ",
+                    "kendall's τ": "Kendall's τ",
+                    "phik (φk)": "Phik (φk)",
+                    "cramér's V (φc)": "Cramér's V (φc)",
+                    "auto": "Auto"
                 }
             }
         },
         "html": {
             "alerts": {
                 "title": "Alertas",
-                "not_present": "No hay alertas presentes en este conjunto de datos",
-                "has_constant_value": "tiene un valor constante",
-                "has_constant_length": "tiene una longitud constante",
+                "not_present": "Alerta no presente en este conjunto de datos",
+                "has_constant_value": "tiene valor constante",
+                "has_constant_length": "tiene longitud constante",
                 "has_dirty_categories": "tiene categorías sucias",
-                "has_high_cardinality": "tiene una alta cardinalidad",
+                "has_high_cardinality": "tiene alta cardinalidad",
                 "distinct_values": "valores distintos",
                 "dataset_has": "El conjunto de datos tiene",
                 "duplicate_rows": "filas duplicadas",
@@ -760,16 +634,16 @@ def step2_create_custom_translations(template_file):
                 "correlated_with": "correlacionado con",
                 "and": "y",
                 "other_fields": "otros campos",
-                "highly_imbalanced": "está altamente desequilibrado",
+                "highly_imbalanced": "está altamente desbalanceado",
                 "has": "tiene",
                 "infinite_values": "valores infinitos",
                 "missing_values": "valores faltantes",
                 "near_duplicate_rows": "filas casi duplicadas",
                 "non_stationary": "es no estacionario",
                 "seasonal": "es estacional",
-                "highly_skewed": "es altamente asimétrico",
+                "highly_skewed": "está altamente sesgado",
                 "truncated_files": "archivos truncados",
-                "alert_type_date": "solo contiene valores de fecha y hora, pero es categórico. Considere aplicar",
+                "alert_type_date": "solo contiene valores datetime, pero es categórico. Considere aplicar",
                 "uniformly_distributed": "está uniformemente distribuido",
                 "unique_values": "tiene valores únicos",
                 "alert_unsupported": "es un tipo no soportado, verifique si necesita limpieza o análisis adicional",
@@ -777,15 +651,15 @@ def step2_create_custom_translations(template_file):
             },
             "sequence": {
                 "overview_tabs": {
-                    "brought_to_you_by": "Presentado por <a href=\"https://ydata.ai/?utm_source=opensource&utm_medium=ydataprofiling&utm_campaign=report\">YData</a>"
+                    "brought_to_you_by": "Desarrollado por <a href=\"https://ydata.ai/?utm_source=opensource&utm_medium=ydataprofiling&utm_campaign=report\">YData</a>"
                 }
             },
             "dropdown": "Seleccionar columnas",
             "frequency_table": {
                 "value": "Valor",
-                "count": "Conteo",
+                "count": "Recuento",
                 "frequency_percentage": "Frecuencia (%)",
-                "redacted_value": "Valor redactado",
+                "redacted_value": "Valor censurado",
                 "no_values_found": "No se encontraron valores"
             },
             "scores": {
@@ -798,8 +672,8 @@ def step2_create_custom_translations(template_file):
     }
 
     # 保存翻译文件
-    french_file = "french_translation.json"
-    spanish_file = "spanish_translation.json"
+    french_file = OUTPUT_DIR / "french_translation.json"
+    spanish_file = OUTPUT_DIR / "spanish_translation.json"
 
     with open(french_file, 'w', encoding='utf-8') as f:
         json.dump(french_translation, f, indent=2, ensure_ascii=False)
@@ -813,9 +687,32 @@ def step2_create_custom_translations(template_file):
     return french_file, spanish_file
 
 
-def step3_single_file_loading(df, french_file):
-    """步骤3: 单个翻译文件加载示例"""
-    print(f"\n📁 Step 3: Loading single translation file - {french_file}")
+def step3_test_translation_function():
+    """步骤3: 测试翻译函数"""
+    print(f"\n🧪 Step 3: Testing translation function...")
+
+    # 测试基本翻译功能
+    print("📋 Current available locales:", get_available_locales())
+    print("🌍 Current locale:", get_locale())
+
+    # 测试一些翻译键
+    test_keys = [
+        "report.overview",
+        "report.variables",
+        "core.alerts.title",
+        "html.frequency_table.value",
+        "nonexistent.key"
+    ]
+
+    print("\n🔍 Testing translation keys:")
+    for key in test_keys:
+        translation = _(key)
+        print(f"  {key} → {translation}")
+
+
+def step4_single_file_loading(df, french_file):
+    """步骤4: 单个翻译文件加载示例"""
+    print(f"\n📁 Step 4: Loading single translation file - {french_file}")
 
     # 加载法语翻译
     load_translation_file(french_file, 'fr')
@@ -826,8 +723,17 @@ def step3_single_file_loading(df, french_file):
     set_locale('fr')
     print(f"🌍 Current locale set to: {get_locale()}")
 
-    profile = ProfileReport(df, title="Rapport d'Analyse des Produits")
-    output_file = "product_analysis_french.html"
+    # 测试翻译
+    print(f"🔍 Testing French translations:")
+    print(f"  report.overview → {_('report.overview')}")
+    print(f"  core.alerts.title → {_('core.alerts.title')}")
+
+    profile = ProfileReport(
+        df,
+        title="Rapport d'Analyse des Produits Smartphones",
+        minimal=False  # 生成详细版本
+    )
+    output_file = OUTPUT_DIR / "product_analysis_french.html"
 
     # 强制覆盖生成报告
     try:
@@ -844,15 +750,15 @@ def step3_single_file_loading(df, french_file):
     return output_file
 
 
-def step4_directory_loading(df, french_file, spanish_file):
-    """步骤4: 翻译目录加载示例"""
-    print(f"\n📂 Step 4: Loading translation directory")
+def step5_directory_loading(df, french_file, spanish_file):
+    """步骤5: 翻译目录加载示例"""
+    print(f"\n📂 Step 5: Loading translation directory")
 
-    # 创建翻译目录
-    translations_dir = Path("custom_translations")
+    # 创建翻译目录在output中
+    translations_dir = OUTPUT_DIR / "custom_translations"
     translations_dir.mkdir(exist_ok=True)
 
-    # 移动翻译文件到目录
+    # 目标文件路径
     french_target = translations_dir / "fr.json"
     spanish_target = translations_dir / "es.json"
 
@@ -885,8 +791,17 @@ def step4_directory_loading(df, french_file, spanish_file):
     set_locale('es')
     print(f"🌍 Current locale set to: {get_locale()}")
 
-    profile = ProfileReport(df, title="Informe de Análisis de Productos")
-    output_file = "product_analysis_spanish.html"
+    # 测试西班牙语翻译
+    print(f"🔍 Testing Spanish translations:")
+    print(f"  report.overview → {_('report.overview')}")
+    print(f"  core.alerts.title → {_('core.alerts.title')}")
+
+    profile = ProfileReport(
+        df,
+        title="Informe de Análisis de Productos Smartphones",
+        minimal=False  # 生成详细版本
+    )
+    output_file = OUTPUT_DIR / "product_analysis_spanish.html"
 
     # 强制覆盖生成报告
     try:
@@ -903,30 +818,65 @@ def step4_directory_loading(df, french_file, spanish_file):
     return output_file, translations_dir
 
 
-def step5_using_locale_parameter(df):
-    """步骤5: 使用ProfileReport的locale参数"""
-    print(f"\n⚙️ Step 5: Using ProfileReport locale parameter")
+def step6_builtin_chinese_support(df):
+    """步骤6: 内置中文支持测试"""
+    print(f"\n🇨🇳 Step 6: Testing built-in Chinese support")
 
-    # 直接在ProfileReport中指定语言
-    print("🔄 Generating report with locale='zh' parameter...")
-    profile_zh = ProfileReport(df, title="产品分析报告", locale='zh')
-    output_file = "product_analysis_chinese.html"
+    # 直接使用内置的中文支持
+    set_locale('zh')
+    print(f"🌍 Current locale set to: {get_locale()}")
+
+    # 测试中文翻译（如果存在）
+    print(f"🔍 Testing Chinese translations:")
+    print(f"  report.overview → {_('report.overview')}")
+    print(f"  report.variables → {_('report.variables')}")
+
+    profile = ProfileReport(
+        df,
+        title="智能手机产品分析报告",
+        minimal=False  # 生成详细版本
+    )
+    output_file = OUTPUT_DIR / "product_analysis_chinese.html"
 
     # 强制覆盖生成报告
     try:
-        profile_zh.to_file(output_file)
+        profile.to_file(output_file)
         print(f"✅ Chinese report generated: {output_file}")
     except Exception as e:
         print(f"⚠️ Warning generating Chinese report: {e}")
         # 如果报告生成失败，删除已存在的文件再重试
         if Path(output_file).exists():
             Path(output_file).unlink()
-        profile_zh.to_file(output_file)
+        profile.to_file(output_file)
         print(f"✅ Chinese report generated (after cleanup): {output_file}")
 
-    print(f"🌍 Current global locale remains: {get_locale()}")
-
     return output_file
+
+
+def step7_locale_parameter_usage(df):
+    """步骤7: 使用ProfileReport的locale参数"""
+    print(f"\n⚙️ Step 7: Using ProfileReport locale parameter")
+
+    # 重置为英文
+    set_locale('en')
+    print(f"🔄 Reset global locale to: {get_locale()}")
+
+    # 直接在ProfileReport中指定语言（如果支持）
+    print("🔄 Generating report with explicit locale parameters...")
+
+    # 生成英文报告
+    profile_en = ProfileReport(
+        df,
+        title="Smartphone Products Analysis Report",
+        minimal=False
+    )
+    output_file_en = OUTPUT_DIR / "product_analysis_explicit_english.html"
+    profile_en.to_file(output_file_en)
+
+    print(f"✅ English report generated: {output_file_en}")
+    print(f"🌍 Global locale remains: {get_locale()}")
+
+    return output_file_en
 
 
 def cleanup_files(files_to_clean):
@@ -947,27 +897,29 @@ def cleanup_files(files_to_clean):
         except Exception as e:
             print(f"⚠️ Could not remove {file_path}: {e}")
 
-
-def safe_file_operation(operation_func, *args, **kwargs):
-    """安全执行文件操作，包含重试逻辑"""
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            return operation_func(*args, **kwargs)
-        except Exception as e:
-            if attempt < max_retries - 1:
-                print(f"⚠️ Attempt {attempt + 1} failed: {e}. Retrying...")
-                import time
-                time.sleep(0.5)  # 短暂等待
-            else:
-                print(f"❌ All attempts failed: {e}")
-                raise
+    # 尝试删除output目录（如果为空）
+    try:
+        if OUTPUT_DIR.exists() and not any(OUTPUT_DIR.iterdir()):
+            OUTPUT_DIR.rmdir()
+            print(f"🗑️ Removed empty output directory: {OUTPUT_DIR}")
+    except Exception as e:
+        print(f"⚠️ Could not remove output directory: {e}")
 
 
 def main():
     """主函数 - 演示完整的翻译工作流程"""
-    print("🚀 YData Profiling Custom Translation Workflow Example")
+    print("🚀 YData Profiling Multilingual Advanced Example")
     print("=" * 60)
+    print("📝 This example demonstrates:")
+    print("   • Translation template export")
+    print("   • Custom translation creation")
+    print("   • Single file and directory loading")
+    print("   • Built-in language support")
+    print("   • Report generation in multiple languages")
+    print("=" * 60)
+
+    # 设置输出目录
+    output_dir = setup_output_directory()
 
     # 记录要清理的文件
     files_to_clean = []
@@ -984,24 +936,39 @@ def main():
         french_file, spanish_file = step2_create_custom_translations(template_file)
         files_to_clean.extend([french_file, spanish_file])
 
-        # 步骤3: 单文件加载
-        french_report = safe_file_operation(step3_single_file_loading, df, french_file)
+        # 步骤3: 测试翻译功能
+        step3_test_translation_function()
+
+        # 步骤4: 单文件加载
+        french_report = step4_single_file_loading(df, french_file)
         files_to_clean.append(french_report)
 
-        # 步骤4: 目录加载
-        spanish_report, translations_dir = safe_file_operation(step4_directory_loading, df, french_file, spanish_file)
+        # 步骤5: 目录加载
+        spanish_report, translations_dir = step5_directory_loading(df, french_file, spanish_file)
         files_to_clean.extend([spanish_report, translations_dir])
 
-        # 步骤5: 使用locale参数
-        chinese_report = safe_file_operation(step5_using_locale_parameter, df)
+        # 步骤6: 内置中文支持
+        chinese_report = step6_builtin_chinese_support(df)
         files_to_clean.append(chinese_report)
 
+        # 步骤7: 显式locale参数
+        english_report = step7_locale_parameter_usage(df)
+        files_to_clean.append(english_report)
+
         print(f"\n🎉 All steps completed successfully!")
-        print(f"📊 Generated reports:")
-        print(f"   - {french_report} (French)")
-        print(f"   - {spanish_report} (Spanish)")
-        print(f"   - {chinese_report} (Chinese)")
-        print(f"\n💡 You can open these HTML files in your browser to see the translated reports.")
+        print(f"📊 Generated files in {output_dir}:")
+        for file in files_to_clean:
+            relative_path = file.relative_to(Path.cwd()) if isinstance(file, Path) else file
+            if isinstance(file, Path) and file.is_file():
+                print(f"   ✅ {relative_path}")
+            elif isinstance(file, Path) and file.is_dir():
+                print(f"   📁 {relative_path}/ (directory)")
+            else:
+                print(f"   📄 {relative_path}")
+
+        print(f"\n📍 All files are located in: {output_dir.absolute()}")
+        print(f"💡 You can open the HTML files in your browser to see the multilingual reports.")
+        print(f"🔍 Compare the reports to see the translation differences.")
 
     except Exception as e:
         print(f"❌ Error occurred: {e}")
@@ -1014,11 +981,14 @@ def main():
             response = input(f"\n🤔 Do you want to clean up generated files? (y/N): ").strip().lower()
             if response in ['y', 'yes']:
                 cleanup_files(files_to_clean)
+                print("✨ Cleanup completed!")
             else:
                 print("📁 Files kept for your review.")
-                print("💡 Tip: You can run this script multiple times to see the overwrites working.")
+                print(f"📍 Location: {output_dir.absolute()}")
+                print("💡 Tip: You can run this script multiple times to test the overwrites.")
         except KeyboardInterrupt:
             print(f"\n📁 Files kept for your review.")
+            print(f"📍 Location: {output_dir.absolute()}")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,8 @@
 {
   "report": {
-    "title": "YData Profiling Report",
     "overview": "Overview",
     "variables": "Variables",
     "interactions": "Interactions",
-    "correlations": "Correlations",
     "missing_values": "Missing values",
     "sample": "Sample",
     "duplicates": "Duplicate rows",
@@ -13,111 +11,27 @@
     "columns": "Columns",
     "more_details": "More details"
   },
-  "overview": {
-    "dataset_info": "Dataset info",
-    "variable_types": "Variable types",
-    "dataset_statistics": "Dataset statistics",
-    "number_of_variables": "Number of variables",
-    "number_of_observations": "Number of observations",
-    "missing_cells": "Missing cells",
-    "missing_cells_percentage": "Missing cells (%)",
-    "duplicate_rows": "Duplicate rows",
-    "duplicate_rows_percentage": "Duplicate rows (%)",
-    "average_record_size": "Average record size in memory"
-  },
-  "variables": {
-    "numeric": "Numeric",
-    "categorical": "Categorical",
-    "boolean": "Boolean",
-    "date": "Date",
-    "text": "Text",
-    "url": "URL",
-    "path": "Path",
-    "image": "Image",
-    "distinct": "Distinct",
-    "distinct_percentage": "Distinct (%)",
-    "missing": "Missing",
-    "missing_percentage": "Missing (%)",
-    "statistics": "Statistics",
-    "quantile_statistics": "Quantile statistics",
-    "common_values": "Common values",
-    "histogram": "Histogram",
-    "mode": "Mode",
-    "standard_deviation": "Standard deviation",
-    "sum": "Sum",
-    "mad": "Median Absolute Deviation (MAD)",
-    "coefficient_of_variation": "Coefficient of variation (CV)",
-    "kurtosis": "Kurtosis",
-    "skewness": "Skewness",
-    "range": "Range",
-    "interquartile_range": "Interquartile range (IQR)",
-    "length": "Length",
-    "sample": "Sample"
-  },
-  "correlations": {
-    "pearson": "Pearson's r",
-    "spearman": "Spearman's ρ",
-    "kendall": "Kendall's τ",
-    "phi_k": "Phik (φk)",
-    "cramers": "Cramér's V (φc)",
-    "auto": "Auto"
-  },
-  "interactions": {
-    "scatter_plot": "Scatter plot",
-    "variable": "Variable"
-  },
-  "missing_values": {
-    "matrix": "Matrix",
-    "bar_chart": "Bar chart",
-    "heatmap": "Heatmap",
-    "dendrogram": "Dendrogram"
-  },
-  "alerts": {
-    "high_correlation": "High correlation",
-    "high_cardinality": "High cardinality",
-    "constant": "Constant",
-    "zeros": "Zeros",
-    "missing": "Missing",
-    "skewed": "Skewed",
-    "type_date": "Date",
-    "uniform": "Uniform",
-    "unique": "Unique",
-    "constant_length": "Constant length",
-    "duplicates": "Duplicates",
-    "empty": "Empty",
-    "imbalance": "Imbalance",
-    "near_duplicates": "Near duplicates",
-    "non_stationary": "Non stationary",
-    "seasonal": "Seasonal",
-    "truncated": "Truncated",
-    "unsupported": "Unsupported",
-    "dirty_category": "Dirty category"
-  },
-  "formatting": {
-    "bytes": "{value} bytes",
-    "kb": "{value} KB",
-    "mb": "{value} MB",
-    "gb": "{value} GB",
-    "percentage": "{value}%"
-  },
   "rendering": {
     "generate_structure": "Generate report structure",
     "html_progress": "Render HTML",
     "json_progress": "Render JSON",
     "widgets_progress": "Render widgets",
-    "other_values_count": "Other values ({other_count})",
-    "missing": "(Missing)"
+    "other_values_count": "Other values ({other_count})"
   },
   "core": {
     "unknown": "unknown",
-    "alerts": "Alerts",
+    "alerts": {
+      "title":"Alerts",
+      "alerts_high_correlation_tip": "This variable has a high {corr} correlation with {num} fields: {title}",
+      "correlation_types": {
+        "overall": "overall"
+      }
+    },
     "collapse": "Collapse",
     "container": "Container",
     "correlationTable": "CorrelationTable",
     "dropdown": "Dropdown",
     "duplicate": "Duplicate",
-    "frequencyTable": "FrequencyTable",
-    "frequencyTableSmall": "FrequencyTableSmall",
     "html": "HTML",
     "image": "Image",
     "sample": "Sample",
@@ -145,6 +59,7 @@
         "values": "values",
         "number_variables": "Number of variables",
         "number_observations": "Number of observations",
+        "number_of_series": "Number of series",
         "missing_cells": "Missing cells",
         "missing_cells_percentage": "Missing cells (%)",
         "duplicate_rows": "Duplicate rows",
@@ -153,6 +68,7 @@
         "average_record_memory": "Average record size in memory",
         "dataset_statistics": "Dataset statistics",
         "variable_types": "Variable types",
+        "variable_descriptions": "Variable descriptions",
         "overview": "Overview",
         "url": "URL",
         "copyright": "Copyright",
@@ -163,10 +79,8 @@
         "software_version": "Software version",
         "download_configuration": "Download configuration",
         "reproduction": "Reproduction",
-        "variable_descriptions": "Variable descriptions",
         "variables": "Variables",
         "alerts_count": "Alerts ({count})",
-        "number_of_series": "Number of series",
         "timeseries_length":  "Time series length",
         "starting_point": "Starting point",
         "ending_point": "Ending point",
@@ -306,7 +220,13 @@
         "netloc": "Netloc",
         "query": "Query",
         "fragment": "Fragment",
-        "heatmap": "Heatmap"
+        "heatmap": "Heatmap",
+        "pearson's r": "Pearson's r",
+        "spearman's ρ": "Spearman's ρ",
+        "kendall's τ": "Kendall's τ",
+        "phik (φk)": "Phik (φk)",
+        "cramér's V (φc)": "Cramér's V (φc)",
+        "auto": "Auto"
       }
     }
   },

@@ -23,12 +23,12 @@ def get_correlation_items(
     items: List[Renderable] = []
 
     key_to_data = {
-        "pearson": (-1, "Pearson's r"),
-        "spearman": (-1, "Spearman's ρ"),
-        "kendall": (-1, "Kendall's τ"),
-        "phi_k": (0, "Phik (φk)"),
-        "cramers": (0, "Cramér's V (φc)"),
-        "auto": (-1, "Auto"),
+        "pearson": (-1, _("core.structure.overview.pearson")),
+        "spearman": (-1, _("core.structure.overview.spearman")),
+        "kendall": (-1, _("core.structure.overview.kendall")),
+        "phi_k": (0, _("core.structure.overview.phi_k")),
+        "cramers": (0, _("core.structure.overview.cramers")),
+        "auto": (-1, _("core.structure.overview.auto")),
     }
 
     image_format = config.plot.image_format

@@ -9,7 +9,7 @@ long_description = (this_directory / "README.md").read_text(encoding='utf-8')
 try:
     version = (source_root / "VERSION").read_text().rstrip("\n")
 except FileNotFoundError:
-    version = "1.0.0"
+    version = "1.0.1"
 
 with open(source_root / "src/ydata_profiling/version.py", "w") as version_file:
     version_file.write(f"__version__ = '{version}'")
@@ -63,6 +63,6 @@ setup(
     zip_safe=False,
     keywords=[
         "pandas", "profiling", "data-science", "data-analysis",
-        "internationalization", "i18n", "multilingual", "localization", "ydata-profiling-fork"
+        "internationalization", "i18n", "multilingual", "localization", "ydata-profiling-multilingual", "ydata-profiling-fork"
     ],
 )
