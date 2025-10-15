@@ -174,6 +174,10 @@ class ProfileReport(SerializeReport, ExpectationsReport):
 
         self.df = self.__initialize_dataframe(df, report_config)
         self.config = report_config
+
+        # 添加字体配置逻辑
+        self._configure_fonts(df, target_locale)
+
         self._df_hash = None
         self._sample = sample
         self._type_schema = type_schema
@@ -183,6 +187,84 @@ class ProfileReport(SerializeReport, ExpectationsReport):
         if not lazy:
             # Trigger building the report structure
             _ = self.report
+
+    def _configure_fonts(self, df: Optional[Union[pd.DataFrame, sDataFrame]], locale: str) -> None:
+        """配置字体支持"""
+        try:
+            # 导入字体配置模块（延迟导入避免循环依赖）
+            from ydata_profiling.visualisation.font_config import configure_fonts_for_data
+
+            # 检查是否需要配置字体
+            should_configure = False
+
+            # 1. 检查是否明确启用了中文支持
+            if hasattr(self.config.plot, 'font') and hasattr(self.config.plot.font, 'chinese_support'):
+                if self.config.plot.font.chinese_support:
+                    should_configure = True
+                    print("明确启用中文字体支持")
+
+            # 2. 检查locale自动配置
+            elif (hasattr(self.config.i18n, 'auto_font_config') and
+                  self.config.i18n.auto_font_config and
+                  locale in ['zh', 'zh-CN', 'zh-TW', 'ja', 'ko']):
+                should_configure = True
+                print(f"根据locale ({locale}) 自动启用字体支持")
+
+            # 3. 检查自动检测配置
+            elif (hasattr(self.config.plot, 'font') and
+                  hasattr(self.config.plot.font, 'auto_detect') and
+                  self.config.plot.font.auto_detect and
+                  df is not None):
+                # 检测数据中是否有中文字符
+                if self._detect_chinese_content(df):
+                    should_configure = True
+                    print("检测到中文内容，自动启用字体支持")
+
+            # 执行字体配置
+            if should_configure:
+                font_configured = configure_fonts_for_data(self.config, df)
+                self._font_support_enabled = font_configured
+                if font_configured:
+                    print("字体配置完成")
+                else:
+                    print("字体配置失败，将使用系统默认字体")
+            else:
+                self._font_support_enabled = False
+
+        except ImportError:
+            # 字体配置模块不存在，跳过配置
+            self._font_support_enabled = False
+        except Exception as e:
+            # 字体配置失败，记录警告但不影响报告生成
+            import warnings
+            warnings.warn(f"字体配置失败: {e}")
+            self._font_support_enabled = False
+
+    def _detect_chinese_content(self, df: Optional[Union[pd.DataFrame, sDataFrame]]) -> bool:
+        """检测数据中是否包含中文字符"""
+        # 直接调用font_config模块中的函数
+        from ydata_profiling.visualisation.font_config import detect_chinese_content
+        return detect_chinese_content(df)
+
+    def get_font_config_status(self) -> dict:
+        """获取字体配置状态信息"""
+        status = {
+            'font_support_enabled': getattr(self, '_font_support_enabled', False),
+            'locale': self.config.i18n.locale if hasattr(self.config.i18n, 'locale') else 'en',
+            'chinese_support_config': False,
+            'auto_detect_config': False,
+            'auto_font_config': False
+        }
+
+        if hasattr(self.config.plot, 'font'):
+            font_config = self.config.plot.font
+            status['chinese_support_config'] = getattr(font_config, 'chinese_support', False)
+            status['auto_detect_config'] = getattr(font_config, 'auto_detect', False)
+
+        if hasattr(self.config.i18n, 'auto_font_config'):
+            status['auto_font_config'] = self.config.i18n.auto_font_config
+
+        return status
 
     @staticmethod
     def __validate_inputs(

@@ -2,10 +2,15 @@
 Complete workflow example for custom translations in ydata-profiling
 演示如何使用 ydata-profiling 的自定义翻译功能的完整工作流程
 """
+import warnings
+
 import pandas as pd
 import json
 import shutil
 from pathlib import Path
+
+from matplotlib import pyplot as plt
+
 from ydata_profiling import ProfileReport
 from ydata_profiling.i18n import (
     export_translation_template,
@@ -29,6 +34,61 @@ def setup_output_directory():
     return OUTPUT_DIR
 
 
+def setup_chinese_fonts():
+    """配置matplotlib支持中文字体"""
+    # 抑制字体警告
+    warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+
+    # 检查是否有本地字体文件
+    font_files = [
+        Path("/src/ydata_profiling/assets/fonts/simhei.ttf"),  # 本地字体目录
+        # "SimHei",  # 系统字体名
+        "Microsoft YaHei",  # 微软雅黑
+        "PingFang SC",  # macOS
+        "WenQuanYi Micro Hei",  # Linux
+        "DejaVu Sans"  # 备用
+    ]
+
+    font_found = False
+    for font in font_files:
+        try:
+            if isinstance(font, Path) and font.exists():
+                # 注册本地字体文件
+                from matplotlib.font_manager import fontManager
+                fontManager.addfont(str(font))
+                font_name = font.stem
+                print(f"✅ 加载本地字体文件: {font}")
+                font_found = True
+                break
+            elif isinstance(font, str):
+                # 测试系统字体
+                plt.rcParams['font.sans-serif'] = [font] + plt.rcParams['font.sans-serif']
+                print(f"✅ 使用系统字体: {font}")
+                font_found = True
+                break
+        except Exception as e:
+            continue
+
+    # 设置字体配置
+    plt.rcParams['font.sans-serif'] = [
+        'SimHei',  # 黑体
+        'Microsoft YaHei',  # 微软雅黑
+        'PingFang SC',  # 苹方 (macOS)
+        'STHeiti',  # 华文黑体 (macOS)
+        'WenQuanYi Micro Hei',  # 文泉驿微米黑 (Linux)
+        'Noto Sans CJK SC',  # 思源黑体 (Linux)
+        'DejaVu Sans',  # 备用西文字体
+        'Arial'  # 最后备用
+    ]
+    plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+
+    if font_found:
+        print("✅ 中文字体配置完成")
+    else:
+        print("⚠️ 未找到理想的中文字体，使用系统默认字体")
+
+    return font_found
+
 def create_sample_data():
     """创建示例数据"""
     print("📊 Creating sample dataset...")
@@ -39,17 +99,17 @@ def create_sample_data():
             '2025-10-10 10:25:00', '2025-10-10 10:30:00', '2025-10-10 10:35:00', '2025-10-10 10:40:00',
             '2025-10-10 10:45:00', '2025-10-10 10:50:00', '2025-10-10 10:55:00', '2025-10-10 11:00:00'
         ],
-        '1AL-GG4': [
+        '总用电量': [
             54033.6, 54033.6, 54033.6, 54033.6,
             54034.2, 54034.2, 54034.2, 54034.2,
             54034.8, 54034.8, 54035.4, 54035.4
         ],
-        '1AL-YF': [
+        '冷机用电量': [
             300265.2, 300266.4, 300267.6, 300268.8,
             300270, 300271.2, 300272.4, 300273.6,
             300274.8, 300276.6, 300277.8, 300279.1
         ],
-        '9AL-ZM4': [
+        '空调系统总用电量': [
             18101.43, 18101.43, 18101.43, 18101.43,
             18101.95, 18101.95, 18101.95, 18101.95,
             18101.95, 18101.95, 18101.95, 18101.95
@@ -212,11 +272,14 @@ def step2_create_custom_translations(template_file):
                     "length_histogram": "histogramme de longueur",
                     "histogram_lengths_category": "Histogramme des longueurs de la catégorie",
                     "most_occurring_categories": "Catégories les plus fréquentes",
+                    "frequency": "Frequency",
                     "most_frequent_character_per_category": "Caractère le plus fréquent par catégorie",
                     "most_occurring_scripts": "Scripts les plus fréquents",
                     "most_frequent_character_per_script": "Caractère le plus fréquent par script",
                     "most_occurring_blocks": "Blocs les plus fréquents",
                     "most_frequent_character_per_block": "Caractère le plus fréquent par bloc",
+                    "imaginary": "Imaginary",
+                    "real": "Real",
                     "total_characters": "Total des caractères",
                     "distinct_characters": "Caractères distincts",
                     "distinct_categories": "Catégories distinctes",
@@ -498,11 +561,14 @@ def step2_create_custom_translations(template_file):
                     "length_histogram": "histograma de longitud",
                     "histogram_lengths_category": "Histograma de longitudes de la categoría",
                     "most_occurring_categories": "Categorías más frecuentes",
+                    "frequency": "Frequency",
                     "most_frequent_character_per_category": "Carácter más frecuente por categoría",
                     "most_occurring_scripts": "Scripts más frecuentes",
                     "most_frequent_character_per_script": "Carácter más frecuente por script",
                     "most_occurring_blocks": "Bloques más frecuentes",
                     "most_frequent_character_per_block": "Carácter más frecuente por bloque",
+                    "imaginary": "Imaginary",
+                    "real": "Real",
                     "total_characters": "Total de caracteres",
                     "distinct_characters": "Caracteres distintos",
                     "distinct_categories": "Categorías distintas",
@@ -731,6 +797,15 @@ def step4_single_file_loading(df, french_file):
     profile = ProfileReport(
         df,
         title="Rapport d'Analyse des Produits Smartphones",
+        interactions={
+            "continuous": True,
+            "targets": []
+        },
+        vars={
+            "num": {
+                "low_categorical_threshold": 0,  # 设为0，避免数值列被误判为分类
+            }
+        },
         minimal=False  # 生成详细版本
     )
     output_file = OUTPUT_DIR / "product_analysis_french.html"
@@ -799,6 +874,16 @@ def step5_directory_loading(df, french_file, spanish_file):
     profile = ProfileReport(
         df,
         title="Informe de Análisis de Productos Smartphones",
+        plot={"font": {"chinese_support": True}},
+        interactions={
+            "continuous": True,
+            "targets": []
+        },
+        vars={
+            "num": {
+                "low_categorical_threshold": 0,  # 设为0，避免数值列被误判为分类
+            }
+        },
         minimal=False  # 生成详细版本
     )
     output_file = OUTPUT_DIR / "product_analysis_spanish.html"
@@ -833,7 +918,19 @@ def step6_builtin_chinese_support(df):
 
     profile = ProfileReport(
         df,
-        title="智能手机产品分析报告",
+        title="用电分析报告",
+        # plot={"font": {"chinese_support": True}},
+        plot={"font": {"custom_font_path": "C:\Windows\Fonts\simhei.ttf"}},
+        locale='zh',
+        interactions={
+            "continuous": True,
+            "targets": []
+        },
+        vars={
+            "num": {
+                "low_categorical_threshold": 0,  # 设为0，避免数值列被误判为分类
+            }
+        },
         minimal=False  # 生成详细版本
     )
     output_file = OUTPUT_DIR / "product_analysis_chinese.html"
@@ -868,6 +965,16 @@ def step7_locale_parameter_usage(df):
     profile_en = ProfileReport(
         df,
         title="Smartphone Products Analysis Report",
+        plot={"font": {"chinese_support": True}},
+        interactions={
+            "continuous": True,
+            "targets": []
+        },
+        vars={
+            "num": {
+                "low_categorical_threshold": 0,  # 设为0，避免数值列被误判为分类
+            }
+        },
         minimal=False
     )
     output_file_en = OUTPUT_DIR / "product_analysis_explicit_english.html"
@@ -906,6 +1013,58 @@ def cleanup_files(files_to_clean):
         print(f"⚠️ Could not remove output directory: {e}")
 
 
+def diagnose_font_issues():
+    """诊断字体配置问题"""
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    import platform
+
+    print("=" * 50)
+    print("字体配置诊断报告")
+    print("=" * 50)
+
+    # 1. 系统信息
+    print(f"操作系统: {platform.system()} {platform.release()}")
+    print(f"Python版本: {platform.python_version()}")
+
+    # 2. 当前matplotlib字体配置
+    print(f"\n当前字体配置:")
+    print(f"font.sans-serif: {plt.rcParams['font.sans-serif'][:5]}...")  # 只显示前5个
+    print(f"font.family: {plt.rcParams['font.family']}")
+    print(f"axes.unicode_minus: {plt.rcParams['axes.unicode_minus']}")
+
+    # 3. 检查系统中可用的中文字体
+    print(f"\n系统中的字体总数: {len(fm.fontManager.ttflist)}")
+
+    chinese_fonts = []
+    for font in fm.fontManager.ttflist:
+        font_name = font.name
+        if any(keyword in font_name.lower() for keyword in
+               ['simhei', 'yahei', 'simsun', 'pingfang', 'heiti', 'wenquanyi', 'noto']):
+            chinese_fonts.append(font_name)
+
+    print(f"发现的中文字体:")
+    for font in chinese_fonts[:10]:  # 只显示前10个
+        print(f"  - {font}")
+
+    if not chinese_fonts:
+        print("  ❌ 未找到中文字体!")
+
+    # 4. 测试具体字体
+    test_fonts = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans', 'Arial']
+    print(f"\n字体可用性测试:")
+
+    for font_name in test_fonts:
+        try:
+            font = fm.FontProperties(family=font_name)
+            actual_font = fm.findfont(font)
+            print(f"  {font_name}: ✅ -> {actual_font}")
+        except Exception as e:
+            print(f"  {font_name}: ❌ -> {e}")
+
+    return chinese_fonts
+
+
 def main():
     """主函数 - 演示完整的翻译工作流程"""
     print("🚀 YData Profiling Multilingual Advanced Example")
@@ -917,7 +1076,8 @@ def main():
     print("   • Built-in language support")
     print("   • Report generation in multiple languages")
     print("=" * 60)
-
+    setup_chinese_fonts()
+    diagnose_font_issues()
     # 设置输出目录
     output_dir = setup_output_directory()
 
@@ -925,6 +1085,9 @@ def main():
     files_to_clean = []
 
     try:
+        print("🔧 配置中文字体支持...")
+        font_success = setup_chinese_fonts()
+
         # 创建示例数据
         df = create_sample_data()
 

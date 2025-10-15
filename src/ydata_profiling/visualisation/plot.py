@@ -20,10 +20,34 @@ from ydata_profiling.config import Settings
 from ydata_profiling.utils.common import convert_timestamp_to_datetime
 from ydata_profiling.visualisation.context import manage_matplotlib_context
 from ydata_profiling.visualisation.utils import plot_360_n0sc0pe
+from ydata_profiling.i18n import _
+
+try:
+    from ydata_profiling.visualisation.font_config import apply_font_config
+except ImportError:
+    def apply_font_config(config, **kwargs):
+        return {}
 
 
 def format_fn(tick_val: int, tick_pos: Any) -> str:
     return convert_timestamp_to_datetime(tick_val).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _apply_font_settings(config: Settings) -> None:
+    """为图表应用字体设置"""
+    try:
+        font_params = apply_font_config(config)
+        if font_params.get('font_path'):
+            # 如果有自定义字体路径，应用它
+            import matplotlib.font_manager as fm
+            fm.fontManager.addfont(font_params['font_path'])
+            font_prop = fm.FontProperties(fname=font_params['font_path'])
+            font_name = font_prop.get_name()
+            plt.rcParams['font.sans-serif'] = [font_name] + plt.rcParams['font.sans-serif']
+            plt.rcParams['axes.unicode_minus'] = False
+    except Exception:
+        # 字体配置失败时静默处理
+        pass
 
 
 def _plot_word_cloud(
@@ -31,11 +55,23 @@ def _plot_word_cloud(
     series: Union[pd.Series, List[pd.Series]],
     figsize: tuple = (6, 4),
 ) -> plt.Figure:
+    _apply_font_settings(config)
+
     if not isinstance(series, list):
         series = [series]
     plot = plt.figure(figsize=figsize)
     for i, series_data in enumerate(series):
         word_dict = series_data.to_dict()
+
+        # 获取字体路径配置
+        font_path = config.plot.font_path
+        try:
+            font_params = apply_font_config(config)
+            if font_params.get('font_path'):
+                font_path = font_params['font_path']
+        except Exception:
+            pass
+
         wordcloud = WordCloud(
             font_path=config.plot.font_path,
             background_color="white",
@@ -73,6 +109,8 @@ def _plot_histogram(
         The histogram plot.
     """
     # we have precomputed the histograms...
+    _apply_font_settings(config)
+
     if isinstance(bins, list):
         n_labels = len(config.html.style._labels)
         fig = plt.figure(figsize=figsize)
@@ -102,12 +140,12 @@ def _plot_histogram(
             fig.xticklabels([])
 
         if not hide_yaxis:
-            fig.supylabel("Frequency")
+            fig.supylabel(_("core.structure.overview.frequency"))
     else:
         fig = plt.figure(figsize=figsize)
         plot = fig.add_subplot(111)
         if not hide_yaxis:
-            plot.set_ylabel("Frequency")
+            plot.set_ylabel(_("core.structure.overview.frequency"))
         else:
             plot.axes.get_yaxis().set_visible(False)
 
@@ -244,6 +282,8 @@ def correlation_matrix(config: Settings, data: pd.DataFrame, vmin: int = -1) -> 
     Returns:
       The resulting correlation matrix encoded as a string.
     """
+    _apply_font_settings(config)
+
     fig_cor, axes_cor = plt.subplots()
 
     cmap = plt.get_cmap(config.plot.correlation.cmap)
@@ -293,8 +333,10 @@ def scatter_complex(config: Settings, series: pd.Series) -> str:
     Returns:
         A string containing (a reference to) the image
     """
-    plt.ylabel("Imaginary")
-    plt.xlabel("Real")
+    _apply_font_settings(config)
+
+    plt.ylabel(_("core.structure.overview.imaginary"))
+    plt.xlabel(_("core.structure.overview.real"))
 
     color = config.html.style.primary_colors[0]
 
@@ -325,6 +367,8 @@ def scatter_series(
     Returns:
         A string containing (a reference to) the image
     """
+    _apply_font_settings(config)
+
     plt.xlabel(x_label)
     plt.ylabel(y_label)
 
@@ -360,6 +404,8 @@ def scatter_pairwise(
     Returns:
         A string containing (a reference to) the image
     """
+    _apply_font_settings(config)
+
     plt.xlabel(x_label)
     plt.ylabel(y_label)
 
@@ -498,6 +544,8 @@ def cat_frequency_plot(
         str: encoded category frequency plot encoded
     """
     # Get colors, if not defined, use matplotlib defaults
+    _apply_font_settings(config)
+
     colors = config.plot.cat_freq.colors
     if colors is None:
         # Get matplotlib defaults
@@ -541,6 +589,8 @@ def cat_frequency_plot(
 
 
 def create_comparison_color_list(config: Settings) -> List[str]:
+    _apply_font_settings(config)
+
     colors = config.html.style.primary_colors
     labels = config.html.style._labels
 
@@ -578,6 +628,8 @@ def plot_timeseries_gap_analysis(
     Returns:
         The TimeSeries lineplot.
     """
+    _apply_font_settings(config)
+
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
 
@@ -626,6 +678,8 @@ def plot_overview_timeseries(
     Returns:
         The TimeSeries lineplot.
     """
+    _apply_font_settings(config)
+
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
 
@@ -670,6 +724,8 @@ def _plot_timeseries(
     Returns:
         The TimeSeries lineplot.
     """
+    _apply_font_settings(config)
+
     fig = plt.figure(figsize=figsize)
     plot = fig.add_subplot(111)
 
@@ -702,6 +758,8 @@ def mini_ts_plot(
     Returns:
         The resulting timeseries plot encoded as a string.
     """
+    _apply_font_settings(config)
+
     plot = _plot_timeseries(config, series, figsize=figsize)
     plot.xaxis.set_tick_params(rotation=45)
     plt.rc("ytick", labelsize=3)
@@ -724,6 +782,8 @@ def _get_ts_lag(config: Settings, series: pd.Series) -> int:
 def _plot_acf_pacf(
     config: Settings, series: pd.Series, figsize: tuple = (15, 5)
 ) -> str:
+    _apply_font_settings(config)
+
     color = config.html.style.primary_colors[0]
 
     lag = _get_ts_lag(config, series)
@@ -759,6 +819,8 @@ def _plot_acf_pacf(
 def _plot_acf_pacf_comparison(
     config: Settings, series: List[pd.Series], figsize: tuple = (15, 5)
 ) -> str:
+    _apply_font_settings(config)
+
     colors = config.html.style.primary_colors
     n_labels = len(config.html.style._labels)
     colors = create_comparison_color_list(config)
@@ -801,6 +863,8 @@ def _plot_acf_pacf_comparison(
 def plot_acf_pacf(
     config: Settings, series: Union[list, pd.Series], figsize: tuple = (15, 5)
 ) -> str:
+    _apply_font_settings(config)
+
     if isinstance(series, list):
         return _plot_acf_pacf_comparison(config, series, figsize)
     else:

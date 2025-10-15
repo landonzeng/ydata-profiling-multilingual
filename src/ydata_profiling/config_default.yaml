@@ -164,6 +164,24 @@ plot:
     max_bins: 250
 
   font_path: null
+ # 新增字体配置部分
+  font:
+    chinese_support: false      # 是否启用中文字体支持
+    auto_detect: true          # 是否自动检测中文字符并启用支持
+    fallback_to_system: true   # 内置字体不可用时是否回退到系统字体
+    custom_font_path: null     # 自定义字体文件路径
+    suppress_warnings: true    # 是否抑制字体相关警告
+    preferred_fonts:           # 字体优先级列表
+      chinese:
+        - "SimHei"             # 黑体
+        - "Microsoft YaHei"    # 微软雅黑
+        - "PingFang SC"        # 苹方 (macOS)
+        - "STHeiti"            # 华文黑体 (macOS)
+        - "WenQuanYi Micro Hei" # 文泉驿微米黑 (Linux)
+        - "Noto Sans CJK SC"   # 思源黑体
+      fallback:
+        - "DejaVu Sans"        # 通用备用字体
+        - "Arial"              # 最后备用
 
 # The number of observations to show
 n_obs_unique: 5
@@ -226,3 +244,11 @@ i18n:
   locale: "en"
   auto_detect: true
   fallback_locale: "en"
+  # 新增自动字体配置
+  auto_font_config: true       # 是否根据locale自动配置字体
+  locale_font_map:            # locale到字体的映射
+    zh: "chinese"             # 中文locale使用chinese字体组
+    zh-CN: "chinese"
+    zh-TW: "chinese"
+    ja: "chinese"             # 日文也可以使用中文字体
+    ko: "chinese"             # 韩文也可以使用中文字体

@@ -53,6 +53,8 @@ setup(
     },
     package_data={
         "ydata_profiling": [
+            "assets/fonts/*.ttf",
+            "assets/fonts/*.md",
             "i18n/locales/*.json",
             "report/presentation/flavours/html/templates/**/*.html",
             "report/presentation/flavours/html/templates/**/*.css",

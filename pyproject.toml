@@ -151,6 +151,8 @@ include-package-data = true
 [tool.setuptools.package-data]
 ydata_profiling = [
     "py.typed",
+    "assets/fonts/*.ttf",
+    "assets/fonts/*.md",
     "i18n/locales/*.json",
 ]
 
