@@ -3,8 +3,8 @@ Example of using ydata-profiling with internationalization
 """
 import pandas as pd
 from ydata_profiling import ProfileReport
-from ydata_profiling.i18n import set_locale
-from ydata_profiling.utils.locale_utils import auto_set_locale
+from ydata_profiling.assets.fonts.font_manager import setup_chinese_fonts
+import matplotlib.pyplot as plt
 
 # Create sample data
 df=pd.DataFrame({
@@ -32,6 +32,10 @@ df=pd.DataFrame({
 
 # Specify the language during initialization
 print("Generating report with locale parameter...")
+setup_chinese_fonts(True)
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
 profile_locale = ProfileReport(df, title="报告标题",
     locale='zh',
     interactions={

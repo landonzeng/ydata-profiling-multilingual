@@ -191,6 +191,13 @@ def histogram(
       The resulting histogram encoded as a string.
 
     """
+    # 在绘图函数开头添加这段代码
+    try:
+        from ydata_profiling.assets.fonts.font_manager import force_matplotlib_chinese_font
+        force_matplotlib_chinese_font()
+    except:
+        pass
+
     plot = _plot_histogram(config, series, bins, date=date, figsize=(7, 3))
     plot.xaxis.set_tick_params(rotation=90 if date else 45)
     plot.figure.tight_layout()
@@ -214,6 +221,14 @@ def mini_histogram(
     Returns:
       The resulting mini histogram encoded as a string.
     """
+
+    # 在绘图函数开头添加这段代码
+    try:
+        from ydata_profiling.assets.fonts.font_manager import force_matplotlib_chinese_font
+        force_matplotlib_chinese_font()
+    except:
+        pass
+
     plot = _plot_histogram(
         config, series, bins, figsize=(3, 2.25), date=date, hide_yaxis=True
     )
@@ -758,6 +773,13 @@ def mini_ts_plot(
     Returns:
         The resulting timeseries plot encoded as a string.
     """
+    # 在绘图函数开头添加这段代码
+    try:
+        from ydata_profiling.assets.fonts.font_manager import force_matplotlib_chinese_font
+        force_matplotlib_chinese_font()
+    except:
+        pass
+
     _apply_font_settings(config)
 
     plot = _plot_timeseries(config, series, figsize=figsize)
