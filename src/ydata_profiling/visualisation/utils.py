@@ -13,13 +13,6 @@ from matplotlib.artist import Artist
 
 from ydata_profiling.config import Settings
 
-# 添加字体配置导入
-try:
-    from ydata_profiling.visualisation.font_config import apply_font_config
-except ImportError:
-    def apply_font_config(config, **kwargs):
-        return {}
-
 
 def hex_to_rgb(hex: str) -> Tuple[float, ...]:
     hex = hex.lstrip("#")
@@ -47,67 +40,78 @@ def _suppress_font_warnings():
                           module='matplotlib.*')
 
 
-def _ensure_builtin_font_for_save(config: Settings) -> None:
-    """确保保存时使用内置字体"""
+def _force_apply_chinese_font() -> Optional[str]:
+    """强制应用中文字体到matplotlib"""
     try:
-        # 检查是否需要中文字体支持
-        needs_chinese_support = False
+        from ydata_profiling.assets.fonts.font_manager import get_font_manager
 
-        if hasattr(config.plot, 'font'):
-            font_config = config.plot.font
-            needs_chinese_support = (
-                getattr(font_config, 'chinese_support', False) or
-                getattr(font_config, 'auto_detect', False)
-            )
+        font_manager = get_font_manager()
+        chinese_font_path = font_manager.get_chinese_font_path()
 
-        if (hasattr(config.i18n, 'auto_font_config') and
-            config.i18n.auto_font_config and
-            hasattr(config.i18n, 'locale') and
-            config.i18n.locale in ['zh', 'zh-CN', 'zh-TW']):
-            needs_chinese_support = True
+        if chinese_font_path and chinese_font_path.exists():
+            # 强制重新注册字体
+            fm.fontManager.addfont(str(chinese_font_path))
 
-        if needs_chinese_support:
-            # 尝试应用内置字体到当前图表
-            try:
-                from ydata_profiling.assets.fonts.font_manager import get_font_manager
+            # 获取字体名称
+            font_prop = fm.FontProperties(fname=str(chinese_font_path))
+            font_name = font_prop.get_name()
 
-                font_manager = get_font_manager()
-                builtin_prop = font_manager.get_builtin_font_prop()
+            # 强制设置为第一优先级
+            plt.rcParams['font.sans-serif'] = [font_name, 'DejaVu Sans', 'Arial']
+            plt.rcParams['font.family'] = 'sans-serif'
+            plt.rcParams['axes.unicode_minus'] = False
 
-                if builtin_prop:
-                    # 直接设置matplotlib的全局字体
-                    builtin_font_name = builtin_prop.get_name()
-                    current_fonts = plt.rcParams['font.sans-serif'].copy()
-
-                    # 确保内置字体在第一位
-                    if builtin_font_name in current_fonts:
-                        current_fonts.remove(builtin_font_name)
-                    current_fonts.insert(0, builtin_font_name)
-
-                    plt.rcParams['font.sans-serif'] = current_fonts
-                    plt.rcParams['axes.unicode_minus'] = False
-
-                    print(f"✅ 保存前应用内置字体: {builtin_font_name}")
-
-            except Exception as e:
-                print(f"⚠️ 应用内置字体失败: {e}")
-
-                # 回退到系统字体
-                chinese_fonts = [
-                    'SimHei', 'Microsoft YaHei', 'PingFang SC', 'STHeiti',
-                    'WenQuanYi Micro Hei', 'Noto Sans CJK SC', 'DejaVu Sans'
-                ]
-
-                plt.rcParams['font.sans-serif'] = chinese_fonts
-                plt.rcParams['font.family'] = 'sans-serif'
-                plt.rcParams['axes.unicode_minus'] = False
+            return font_name
 
     except Exception:
-        # 静默处理配置错误
         pass
 
+    # 回退到系统字体
+    chinese_fonts = [
+        'SimHei', 'Microsoft YaHei', 'PingFang SC', 'STHeiti',
+        'WenQuanYi Micro Hei', 'Noto Sans CJK SC', 'DejaVu Sans'
+    ]
+    plt.rcParams['font.sans-serif'] = chinese_fonts
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['axes.unicode_minus'] = False
 
-def _post_process_svg(svg_content: str, config: Settings) -> str:
+    return chinese_fonts[0]
+
+
+def _apply_font_to_current_figure(font_name: str):
+    """将字体应用到当前图表的所有元素"""
+    try:
+        fig = plt.gcf()
+        font_prop = fm.FontProperties(family=font_name)
+
+        for ax in fig.get_axes():
+            # 轴标签
+            if ax.xaxis.label:
+                ax.xaxis.label.set_fontproperties(font_prop)
+            if ax.yaxis.label:
+                ax.yaxis.label.set_fontproperties(font_prop)
+            if ax.title:
+                ax.title.set_fontproperties(font_prop)
+
+            # 刻度标签
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontproperties(font_prop)
+
+            # 图例
+            legend = ax.get_legend()
+            if legend:
+                for text in legend.get_texts():
+                    text.set_fontproperties(font_prop)
+
+            # 所有文本对象
+            for text in ax.texts:
+                text.set_fontproperties(font_prop)
+
+    except Exception as e:
+        print(f"应用字体到图表失败: {e}")
+
+
+def _post_process_svg(svg_content: str) -> str:
     """对SVG内容进行后处理，确保中文字符正确显示"""
     try:
         import re
@@ -119,24 +123,22 @@ def _post_process_svg(svg_content: str, config: Settings) -> str:
                 '<?xml version="1.0" encoding="UTF-8"?>'
             )
 
-        # 替换SVG中的字体族声明
-        if 'font-family' in svg_content:
-            # 查找所有font-family声明并替换为中文字体
-            chinese_font_family = "SimHei, Microsoft YaHei, PingFang SC, sans-serif"
+        # 替换SVG中的Arial字体为中文字体
+        chinese_font_family = "SimHei, Microsoft YaHei, PingFang SC, sans-serif"
 
-            # 替换style属性中的font-family
-            svg_content = re.sub(
-                r'font-family:\s*[^;"\'>]+',
-                f'font-family: {chinese_font_family}',
-                svg_content
-            )
+        # 替换style属性中的font-family
+        svg_content = re.sub(
+            r'font-family:\s*[^;"\'>]+',
+            f'font-family: {chinese_font_family}',
+            svg_content
+        )
 
-            # 替换直接的font-family属性
-            svg_content = re.sub(
-                r'font-family="[^"]*"',
-                f'font-family="{chinese_font_family}"',
-                svg_content
-            )
+        # 替换直接的font-family属性
+        svg_content = re.sub(
+            r'font-family="[^"]*"',
+            f'font-family="{chinese_font_family}"',
+            svg_content
+        )
 
         return svg_content
 
@@ -153,15 +155,18 @@ def plot_360_n0sc0pe(
     # 抑制字体警告
     _suppress_font_warnings()
 
-    # 确保内置字体在保存前生效
-    _ensure_builtin_font_for_save(config)
-
     if image_format is None:
         image_format = config.plot.image_format.value
 
     mime_types = {"png": "image/png", "svg": "image/svg+xml"}
     if image_format not in mime_types:
         raise ValueError('Can only 360 n0sc0pe "png" or "svg" format.')
+
+    # 强制应用中文字体
+    font_name = _force_apply_chinese_font()
+
+    # 应用字体到当前图表
+    _apply_font_to_current_figure(font_name)
 
     # 准备保存参数
     save_kwargs = {
@@ -170,7 +175,6 @@ def plot_360_n0sc0pe(
         "bbox_inches": bbox_inches,
     }
 
-    # 对SVG格式添加特殊设置
     if image_format == "svg":
         save_kwargs.update({
             "facecolor": 'white',
@@ -181,9 +185,9 @@ def plot_360_n0sc0pe(
         if image_format == "svg":
             image_str = StringIO()
 
-            # 🆕 使用上下文管理器确保字体设置在保存时生效
+            # 使用强制字体上下文保存
             with plt.rc_context({
-                'font.sans-serif': plt.rcParams['font.sans-serif'],
+                'font.sans-serif': [font_name, 'DejaVu Sans'],
                 'font.family': 'sans-serif',
                 'axes.unicode_minus': False
             }):
@@ -193,14 +197,13 @@ def plot_360_n0sc0pe(
             result_string = image_str.getvalue()
 
             # 对SVG内容进行后处理
-            result_string = _post_process_svg(result_string, config)
+            result_string = _post_process_svg(result_string)
         else:
             image_bytes = BytesIO()
             save_kwargs["dpi"] = config.plot.dpi
 
-            # 使用上下文管理器确保字体设置在保存时生效
             with plt.rc_context({
-                'font.sans-serif': plt.rcParams['font.sans-serif'],
+                'font.sans-serif': [font_name, 'DejaVu Sans'],
                 'font.family': 'sans-serif',
                 'axes.unicode_minus': False
             }):
@@ -221,9 +224,8 @@ def plot_360_n0sc0pe(
         if image_format == "png":
             save_kwargs["dpi"] = config.plot.dpi
 
-        # 使用上下文管理器确保字体设置在保存时生效
         with plt.rc_context({
-            'font.sans-serif': plt.rcParams['font.sans-serif'],
+            'font.sans-serif': [font_name, 'DejaVu Sans'],
             'font.family': 'sans-serif',
             'axes.unicode_minus': False
         }):

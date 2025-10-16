@@ -166,7 +166,7 @@ plot:
   font_path: null
  # 新增字体配置部分
   font:
-    chinese_support: false      # 是否启用中文字体支持
+    chinese_support: true      # 是否启用中文字体支持
     auto_detect: true          # 是否自动检测中文字符并启用支持
     fallback_to_system: true   # 内置字体不可用时是否回退到系统字体
     custom_font_path: null     # 自定义字体文件路径

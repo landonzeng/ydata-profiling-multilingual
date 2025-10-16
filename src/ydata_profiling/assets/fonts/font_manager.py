@@ -17,7 +17,7 @@ class FontManager:
         self.font_dir = Path(__file__).parent
         self.available_fonts = self._get_bundled_fonts()
         self._font_initialized = False
-        self._builtin_font_prop = None  # 存储内置字体属性
+        self._builtin_font_prop = None
 
     def _get_bundled_fonts(self) -> dict:
         """获取内置字体列表"""
@@ -32,7 +32,6 @@ class FontManager:
 
     def get_chinese_font_path(self) -> Optional[Path]:
         """获取中文字体路径"""
-        # 优先级排序
         chinese_fonts = ['simhei', 'simsun', 'microsoftyahei', 'msyh']
 
         for font_name in chinese_fonts:
@@ -47,17 +46,13 @@ class FontManager:
             return True
 
         try:
-            # 抑制字体警告
             warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
 
-            # 获取中文字体路径
             chinese_font_path = self.get_chinese_font_path()
 
             if chinese_font_path and chinese_font_path.exists():
-                # 使用字体属性而不是修改字体名称
                 return self._setup_builtin_font_with_properties(chinese_font_path)
             else:
-                # 回退到系统字体
                 self._setup_system_chinese_fonts()
                 return False
 
@@ -69,7 +64,6 @@ class FontManager:
     def _setup_builtin_font_with_properties(self, font_path: Path) -> bool:
         """使用字体属性设置内置字体"""
         try:
-            # 直接创建字体属性对象
             self._builtin_font_prop = fm.FontProperties(fname=str(font_path))
             builtin_font_name = self._builtin_font_prop.get_name()
 
@@ -79,24 +73,15 @@ class FontManager:
             # 强制注册字体到matplotlib
             fm.fontManager.addfont(str(font_path))
 
-            # 重建字体缓存
             try:
                 fm._rebuild()
             except:
                 pass
 
-            # 设置matplotlib全局配置，确保内置字体优先
-            # 移除可能冲突的字体名称
-            current_fonts = plt.rcParams['font.sans-serif'].copy()
-            filtered_fonts = [f for f in current_fonts if f != builtin_font_name]
-
-            # 将内置字体放在最前面
-            new_fonts = [builtin_font_name] + filtered_fonts
-
+            # 设置matplotlib全局配置
+            new_fonts = [builtin_font_name, 'DejaVu Sans', 'Arial']
             plt.rcParams['font.sans-serif'] = new_fonts
             plt.rcParams['axes.unicode_minus'] = False
-
-            # 额外设置：强制指定默认字体
             plt.rcParams['font.family'] = 'sans-serif'
 
             self._font_initialized = True
@@ -104,33 +89,19 @@ class FontManager:
             print(f"✅ 字体配置成功")
             print(f"   当前字体优先级: {new_fonts[:3]}")
 
-            # 验证字体解析
-            test_prop = fm.FontProperties(family=builtin_font_name)
-            resolved_path = fm.findfont(test_prop)
-
-            if str(font_path) in resolved_path or font_path.name in resolved_path:
-                print(f"✅ 字体解析验证成功: {resolved_path}")
-                return True
-            else:
-                print(f"⚠️ 字体解析验证失败:")
-                print(f"   期望包含: {font_path}")
-                print(f"   实际解析: {resolved_path}")
-                # 即使解析不完美，仍然返回True，因为字体已经注册
-                return True
+            return True
 
         except Exception as e:
             print(f"❌ 内置字体设置失败: {e}")
-            import traceback
-            traceback.print_exc()
             return False
 
     def _setup_system_chinese_fonts(self):
         """设置系统中文字体"""
         system_fonts = [
-            'Microsoft YaHei', 'SimSun', 'SimHei',  # Windows
-            'PingFang SC', 'STHeiti', 'Heiti SC',   # macOS
-            'WenQuanYi Micro Hei', 'Noto Sans CJK SC',  # Linux
-            'DejaVu Sans'  # 备用
+            'Microsoft YaHei', 'SimSun', 'SimHei',
+            'PingFang SC', 'STHeiti', 'Heiti SC',
+            'WenQuanYi Micro Hei', 'Noto Sans CJK SC',
+            'DejaVu Sans'
         ]
 
         plt.rcParams['font.sans-serif'] = system_fonts
@@ -142,6 +113,27 @@ class FontManager:
     def get_builtin_font_prop(self) -> Optional[fm.FontProperties]:
         """获取内置字体属性对象"""
         return self._builtin_font_prop
+
+    def force_apply_to_matplotlib(self) -> Optional[str]:
+        """强制应用字体到matplotlib（用于保存图表前调用）"""
+        chinese_font_path = self.get_chinese_font_path()
+
+        if chinese_font_path and chinese_font_path.exists():
+            # 强制重新注册字体
+            fm.fontManager.addfont(str(chinese_font_path))
+
+            # 获取字体名称
+            font_prop = fm.FontProperties(fname=str(chinese_font_path))
+            font_name = font_prop.get_name()
+
+            # 强制设置为唯一优先字体
+            plt.rcParams['font.sans-serif'] = [font_name, 'DejaVu Sans']
+            plt.rcParams['font.family'] = 'sans-serif'
+            plt.rcParams['axes.unicode_minus'] = False
+
+            return font_name
+
+        return None
 
     def get_font_info(self) -> dict:
         """获取字体信息"""
@@ -182,10 +174,8 @@ def apply_builtin_font_to_plot():
     builtin_prop = font_manager.get_builtin_font_prop()
 
     if builtin_prop:
-        # 获取当前的matplotlib轴对象
         import matplotlib.pyplot as plt
 
-        # 应用到当前图表的所有文本
         for ax in plt.gcf().get_axes():
             for text in ax.get_children():
                 if hasattr(text, 'set_fontproperties'):
@@ -196,3 +186,8 @@ def apply_builtin_font_to_plot():
 
         return True
     return False
+
+
+def force_matplotlib_chinese_font() -> Optional[str]:
+    """强制设置matplotlib全局中文字体（用于图表保存前调用）"""
+    return _font_manager.force_apply_to_matplotlib()

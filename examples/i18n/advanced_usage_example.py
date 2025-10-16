@@ -920,7 +920,7 @@ def step6_builtin_chinese_support(df):
         df,
         title="用电分析报告",
         # plot={"font": {"chinese_support": True}},
-        plot={"font": {"custom_font_path": "C:\Windows\Fonts\simhei.ttf"}},
+        plot={"font": {"custom_font_path": "src/ydata_profiling/assets/fonts/simhei.ttf"}},
         locale='zh',
         interactions={
             "continuous": True,
