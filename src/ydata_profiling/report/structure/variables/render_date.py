@@ -121,7 +121,7 @@ def render_date(config: Settings, summary: Dict[str, Any]) -> Dict[str, Any]:
                 hist_data,
                 image_format=image_format,
                 alt=_("core.structure.overview.histogram"),
-                caption=f"<strong>{_("core.structure.overview.histogram_caption")}</strong> (bins={n_bins})",
+                caption=f"<strong>{_('core.structure.overview.histogram_caption')}</strong> (bins={n_bins})",
                 name=_("core.structure.overview.histogram"),
                 anchor_id=f"{varid}histogram",
             )

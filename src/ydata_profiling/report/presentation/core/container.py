@@ -26,7 +26,7 @@ class Container(Renderable):
         self.sequence_type = sequence_type
 
     def __str__(self) -> str:
-        text = f"{_("core.container")}\n"
+        text = f"{_('core.container')}\n"
         if "items" in self.content:
             for id, item in enumerate(self.content["items"]):
                 name = str(item).replace("\n", "\n\t")
@@ -36,7 +36,7 @@ class Container(Renderable):
     def __repr__(self) -> str:
         if "name" in self.content:
             name = self.content["name"]
-            return f"{_("core.container")}(name={name})"
+            return f"{_('core.container')}(name={name})"
         else:
             return _("core.container")
 

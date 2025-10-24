@@ -110,7 +110,7 @@ def render_count(config: Settings, summary: dict) -> dict:
             histogram(config, *summary["histogram"]),
             image_format=image_format,
             alt=_("core.structure.overview.histogram"),
-            caption=f"<strong>{_("core.structure.overview.histogram_caption")}</strong> (bins={len(summary['histogram'][1]) - 1})",
+            caption=f"<strong>{_('core.structure.overview.histogram_caption')}</strong> (bins={len(summary['histogram'][1]) - 1})",
             name=_("core.structure.overview.histogram"),
             anchor_id="histogram",
         )
@@ -127,13 +127,13 @@ def render_count(config: Settings, summary: dict) -> dict:
         [
             FrequencyTable(
                 template_variables["firstn_expanded"],
-                name=f"{_("core.structure.overview.min")} {config.n_extreme_obs} {_("core.structure.overview.values")}",
+                name=f"{_('core.structure.overview.min')} {config.n_extreme_obs} {_('core.structure.overview.values')}",
                 anchor_id="firstn",
                 redact=False,
             ),
             FrequencyTable(
                 template_variables["lastn_expanded"],
-                name=f"{_("core.structure.overview.max")} {config.n_extreme_obs} {_("core.structure.overview.values")}",
+                name=f"{_('core.structure.overview.max')} {config.n_extreme_obs} {_('core.structure.overview.values')}",
                 anchor_id="lastn",
                 redact=False,
             ),

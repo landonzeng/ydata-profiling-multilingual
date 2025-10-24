@@ -251,10 +251,10 @@ def render_real(config: Settings, summary: dict) -> dict:
             [x[1] for x in summary.get("histogram", [])],
         )
         bins = len(summary["histogram"][0][1]) - 1 if "histogram" in summary else 0
-        hist_caption = f"<strong>{_("core.structure.overview.histogram_caption")}</strong> (bins={bins})"
+        hist_caption = f"<strong>{_('core.structure.overview.histogram_caption')}</strong> (bins={bins})"
     else:
         hist_data = histogram(config, *summary["histogram"])
-        hist_caption = f"<strong>{_("core.structure.overview.histogram_caption")}</strong> (bins={len(summary['histogram'][1]) - 1})"
+        hist_caption = f"<strong>{_('core.structure.overview.histogram_caption')}</strong> (bins={len(summary['histogram'][1]) - 1})"
 
     hist = Image(
         hist_data,
@@ -276,13 +276,13 @@ def render_real(config: Settings, summary: dict) -> dict:
         [
             FrequencyTable(
                 template_variables["firstn_expanded"],
-                name=f"{_("core.structure.overview.min")} {config.n_extreme_obs} {_("core.structure.overview.values")}",
+                name=f"{_('core.structure.overview.min')} {config.n_extreme_obs} {_('core.structure.overview.values')}",
                 anchor_id=f"{varid}firstn",
                 redact=False,
             ),
             FrequencyTable(
                 template_variables["lastn_expanded"],
-                name=f"{_("core.structure.overview.max")} {config.n_extreme_obs} {_("core.structure.overview.values")}",
+                name=f"{_('core.structure.overview.max')} {config.n_extreme_obs} {_('core.structure.overview.values')}",
                 anchor_id=f"{varid}lastn",
                 redact=False,
             ),

@@ -21,7 +21,7 @@ class Variable(ItemRenderer):
         top_text = str(self.content["top"]).replace("\n", "\n\t")
         bottom_text = str(self.content["bottom"]).replace("\n", "\n\t")
 
-        text = f"{_("core.variable")}\n"
+        text = f"{_('core.variable')}\n"
         text += f"- top: {top_text}"
         text += f"- bottom: {bottom_text}"
         return text

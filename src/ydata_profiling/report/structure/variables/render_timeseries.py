@@ -296,10 +296,10 @@ def render_timeseries(config: Settings, summary: dict) -> dict:
             [x[0] for x in summary["histogram"]],
             [x[1] for x in summary["histogram"]],
         )
-        hist_caption = f"<strong>{_("core.structure.overview.histogram_caption")}</strong> (bins={len(summary['histogram'][0][1]) - 1})"
+        hist_caption = f"<strong>{_('core.structure.overview.histogram_caption')}</strong> (bins={len(summary['histogram'][0][1]) - 1})"
     else:
         hist_data = histogram(config, *summary["histogram"])
-        hist_caption = f"<strong>{_("core.structure.overview.histogram_caption")}</strong> (bins={len(summary['histogram'][1]) - 1})"
+        hist_caption = f"<strong>{_('core.structure.overview.histogram_caption')}</strong> (bins={len(summary['histogram'][1]) - 1})"
 
     hist = Image(
         hist_data,
@@ -321,13 +321,13 @@ def render_timeseries(config: Settings, summary: dict) -> dict:
         [
             FrequencyTable(
                 template_variables["firstn_expanded"],
-                name=f"{_("core.structure.overview.min")} {config.n_extreme_obs} {_("core.structure.overview.values")}",
+                name=f"{_('core.structure.overview.min')} {config.n_extreme_obs} {_('core.structure.overview.values')}",
                 anchor_id=f"{varid}firstn",
                 redact=False,
             ),
             FrequencyTable(
                 template_variables["lastn_expanded"],
-                name=f"{_("core.structure.overview.max")} {config.n_extreme_obs} {_("core.structure.overview.values")}",
+                name=f"{_('core.structure.overview.max')} {config.n_extreme_obs} {_('core.structure.overview.values')}",
                 anchor_id=f"{varid}lastn",
                 redact=False,
             ),
@@ -341,7 +341,7 @@ def render_timeseries(config: Settings, summary: dict) -> dict:
         plot_acf_pacf(config, summary["series"]),
         image_format=image_format,
         alt=_("core.structure.overview.autocorrelation"),
-        caption=f"<strong>{_("core.structure.overview.autocorrelation_caption")}</strong>",
+        caption=f"<strong>{_('core.structure.overview.autocorrelation_caption')}</strong>",
         name=_("core.structure.overview.autocorrelation"),
         anchor_id=f"{varid}acf_pacf",
     )

@@ -483,7 +483,7 @@ def render_categorical(config: Settings, summary: dict) -> dict:
                         if summary["n_distinct"][idx] <= max_unique
                         else HTML(
                             f"<h4 class='indent'>{config.html.style._labels[idx]}</h4><br />"
-                            f"<em>{_("core.structure.overview.categories_passes_threshold")}</em>"
+                            f"<em>{_('core.structure.overview.categories_passes_threshold')}</em>"
                         )
                         for idx, s in enumerate(summary["value_counts_without_nan"])
                     ],

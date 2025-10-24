@@ -27,7 +27,7 @@ def render_file(config: Settings, summary: dict) -> dict:
                 histogram(config, *summary["histogram_file_size"]),
                 image_format=image_format,
                 alt=_("core.structure.overview.size"),
-                caption=f"<strong>{_("core.structure.overview.file_size_caption")}</strong> (bins={len(summary['histogram_file_size'][1]) - 1})",
+                caption=f"<strong>{_('core.structure.overview.file_size_caption')}</strong> (bins={len(summary['histogram_file_size'][1]) - 1})",
                 name=_("core.structure.overview.file_size"),
                 anchor_id=f"{varid}file_size_histogram",
             )
