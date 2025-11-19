@@ -162,7 +162,7 @@ def get_dataset_reproduction(config: Settings, summary: BaseDescription) -> Rend
 
     @list_args
     def fmt_version(version: str) -> str:
-        return f'<a href="https://github.com/ydataai/ydata-profiling">ydata-profiling v{version}</a>'
+        return _("core.structure.overview.version") # f'<a href="https://github.com/ydataai/ydata-profiling">ydata-profiling v{version}</a>'
 
     @list_args
     def fmt_config(config: str) -> str:
@@ -173,8 +173,8 @@ def get_dataset_reproduction(config: Settings, summary: BaseDescription) -> Rend
             {"name": _("core.structure.overview.analysis_started"), "value": fmt(date_start)},
             {"name": _("core.structure.overview.analysis_finished"), "value": fmt(date_end)},
             {"name": _("core.structure.overview.duration"), "value": fmt_timespan(duration)},
-            {"name": _("core.structure.overview.software_version"), "value": fmt_version(version)},
-            {"name": _("core.structure.overview.download_configuration"), "value": fmt_config(config_file)},
+            # {"name": _("core.structure.overview.software_version"), "value": fmt_version(version)},
+            # {"name": _("core.structure.overview.download_configuration"), "value": fmt_config(config_file)},
         ],
         name=_("core.structure.overview.reproduction"),
         anchor_id="overview_reproduction",

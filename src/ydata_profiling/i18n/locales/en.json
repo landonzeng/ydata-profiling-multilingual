@@ -77,6 +77,7 @@
         "analysis_finished": "Analysis finished",
         "duration": "Duration",
         "software_version": "Software version",
+        "version": "<a href=\"https://github.com/ydataai/ydata-profiling\">ydata-profiling v1.0.6</a>",
         "download_configuration": "Download configuration",
         "reproduction": "Reproduction",
         "variables": "Variables",

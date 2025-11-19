@@ -6,7 +6,7 @@
     "missing_values": "缺失值",
     "sample": "样本数据",
     "duplicates": "重复数据",
-    "footer_text": "报告由 <a href=\"https://ydata.ai/?utm_source=opensource&utm_medium=pandasprofiling&utm_campaign=report\">YData</a> 生成。",
+    "footer_text": "",
     "most_frequently_occurring": "出现频率最高的",
     "columns": "列",
     "more_details": "更多详情"
@@ -77,6 +77,7 @@
         "analysis_finished": "分析结束",
         "duration": "持续时间",
         "software_version": "软件版本",
+        "version": "v1.0.6",
         "download_configuration": "下载配置",
         "reproduction": "复现信息",
         "variables": "变量",
@@ -266,7 +267,7 @@
     },
     "sequence": {
       "overview_tabs": {
-        "brought_to_you_by": "由 <a href=\"https://ydata.ai/?utm_source=opensource&utm_medium=ydataprofiling&utm_campaign=report\">YData</a> 为您提供"
+        "brought_to_you_by": ""
       }
     },
     "dropdown": "选择列",

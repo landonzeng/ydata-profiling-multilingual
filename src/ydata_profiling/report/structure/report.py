@@ -451,7 +451,7 @@ def get_report_structure(config: Settings, summary: BaseDescription) -> Root:
         pbar.update()
 
     footer = HTML(
-        content=_("report.footer_text")
+        content=""
     )
 
     return Root("Root", sections, footer, style=config.html.style)

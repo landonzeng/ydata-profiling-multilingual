@@ -287,6 +287,7 @@ class TranslationManager:
                         "analysis_finished": "Analysis finished",
                         "duration": "Duration",
                         "software_version": "Software version",
+                        "version": "v1.0.6",
                         "download_configuration": "Download configuration",
                         "reproduction": "Reproduction",
                         "variables": "Variables",
