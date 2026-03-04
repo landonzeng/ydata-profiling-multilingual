@@ -143,7 +143,7 @@ th, td {
 .freq:not(.mini) tr th:nth-child(2),
 .freq:not(.mini) tr th:nth-child(3){
     width: 200px;
-    text-align: right;
+    text-align: left;
 }
 
 .freq:not(.mini) tr td:nth-child(4),

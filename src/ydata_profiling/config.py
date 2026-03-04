@@ -235,7 +235,8 @@ class Html(BaseModel):
 
 class Duplicates(BaseModel):
     head: int = 10
-    key: str = "# duplicates"
+    # key: str = "# duplicates"
+    key: str = "重复项"
 
 
 class Correlation(BaseModel):
