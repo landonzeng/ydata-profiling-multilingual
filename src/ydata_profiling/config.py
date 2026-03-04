@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import yaml
 from pydantic.v1 import BaseModel, BaseSettings, Field, PrivateAttr
 from ydata_profiling.i18n import set_locale, get_locale
+from ydata_profiling.i18n import _
 
 
 def _merge_dictionaries(dict1: dict, dict2: dict) -> dict:
@@ -235,8 +236,7 @@ class Html(BaseModel):
 
 class Duplicates(BaseModel):
     head: int = 10
-    # key: str = "# duplicates"
-    key: str = "重复项"
+    key: str = _("report.duplicates_key")
 
 
 class Correlation(BaseModel):

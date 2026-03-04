@@ -6,6 +6,7 @@
     "missing_values": "缺失值",
     "sample": "样本数据",
     "duplicates": "重复数据",
+    "duplicates_key": "重复项",
     "footer_text": "",
     "most_frequently_occurring": "出现频率最高的",
     "columns": "列",
