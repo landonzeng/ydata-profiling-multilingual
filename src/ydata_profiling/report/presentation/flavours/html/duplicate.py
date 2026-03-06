@@ -5,9 +5,23 @@ from ydata_profiling.report.presentation.flavours.html import templates
 
 
 def to_html(df: pd.DataFrame) -> str:
-    html = df.to_html(
-        classes="duplicate table table-striped",
+
+    # html = df.to_html(
+    #     classes="duplicate table table-striped",
+    #     justify="center",
+    # )
+
+    html = (
+        df
+        .style
+        .set_table_attributes('class="duplicate table table-striped"')
+        .set_table_styles([
+            {'selector': 'th', 'props': [('text-align', 'center')]},  # 所有 th 居左
+            {'selector': 'td', 'props': [('text-align', 'center')]}
+        ])
+        .to_html()
     )
+
     if df.empty:
         html = html.replace(
             "<tbody>",
