@@ -2,6 +2,7 @@ import pandas as pd
 
 from ydata_profiling.report.presentation.core.duplicate import Duplicate
 from ydata_profiling.report.presentation.flavours.html import templates
+from ydata_profiling.i18n import _
 
 
 def to_html(df: pd.DataFrame) -> str:
@@ -32,7 +33,7 @@ def to_html(df: pd.DataFrame) -> str:
 
 class HTMLDuplicate(Duplicate):
     def render(self) -> str:
-        duplicate_html = to_html(self.content["duplicate"])
+        duplicate_html = to_html(self.content["duplicate"]).replace("# duplicates",_("report.duplicates_key"))
         return templates.template("duplicate.html").render(
             **self.content, duplicate_html=duplicate_html
         )
